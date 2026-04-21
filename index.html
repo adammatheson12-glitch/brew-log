@@ -1,1910 +1,1231 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Brew Log</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0e0e10;
-    --surface: #18181c;
-    --surface2: #222228;
-    --surface3: #2a2a32;
-    --accent: #ff6b35;
-    --accent2: #00d4b4;
-    --text: #f0ede8;
-    --text2: #9997a0;
-    --text3: #5a5860;
-    --border: #2e2e36;
-    --danger: #ff4757;
-    --star: #ffd700;
-    --radius: 14px;
-    --radius-sm: 8px;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>ΔV-60</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #070d13;
+      --bg2:       #0b1520;
+      --bg3:       #101c2a;
+      --bg4:       #162334;
+      --border:    #1b2e40;
+      --accent:    #18d9b4;
+      --accent-lo: rgba(24,217,180,.1);
+      --accent-hi: rgba(24,217,180,.22);
+      --text:      #dff0ec;
+      --text-mid:  #5a9990;
+      --text-dim:  #2b5550;
+      --amber:     #e8a444;
+      --amber-lo:  rgba(232,164,68,.12);
+      --red:       #e05555;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;min-height:100vh;overscroll-behavior:none}
+    #app{max-width:480px;margin:0 auto;min-height:100vh;position:relative}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    /* ── SCROLLBAR ─────────────────────────────── */
+    ::-webkit-scrollbar{width:3px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+    .drum-track{scrollbar-width:none;-ms-overflow-style:none}
+    .drum-track::-webkit-scrollbar{display:none}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 14px;
-    min-height: 100vh;
-    padding-bottom: env(safe-area-inset-bottom);
-    overflow-x: hidden;
-  }
+    /* ── HEADER ────────────────────────────────── */
+    .page-header{padding:22px 18px 14px}
+    .logo-eyebrow{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
+    .logo{font-family:'Syne',sans-serif;font-size:32px;font-weight:700;letter-spacing:-.01em;color:var(--text);line-height:1}
+    .logo em{color:var(--accent);font-style:normal}
+    .logo-num{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:700}
 
-  /* Noise texture overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 1000;
-    opacity: 0.4;
-  }
+    /* ── TABS ──────────────────────────────────── */
+    .tabs{display:flex;gap:24px;padding:16px 18px 0;border-bottom:1px solid var(--border);margin-bottom:16px}
+    .tab{background:none;border:none;border-bottom:2px solid transparent;padding-bottom:11px;margin-bottom:-1px;
+         font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+         color:var(--text-dim);cursor:pointer;transition:color .15s}
+    .tab.on{color:var(--accent);border-bottom-color:var(--accent)}
 
-  /* ── HEADER ── */
-  .app-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(14,14,16,0.92);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    padding: 16px 20px 12px;
-    padding-top: calc(env(safe-area-inset-top) + 16px);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+    /* ── CARDS ─────────────────────────────────── */
+    .list{padding:0 14px;display:flex;flex-direction:column;gap:9px;padding-bottom:88px}
+    .card{background:var(--bg2);border:1px solid var(--border);border-left:2px solid var(--accent);
+          border-radius:2px;padding:14px 15px;cursor:pointer;transition:border-color .15s,background .12s}
+    .card:active{background:var(--bg3)}
+    .card.finished{border-left-color:var(--border);opacity:.7}
+    .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .card-roaster{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-mid);margin-bottom:3px}
+    .card-name{font-family:'Syne',sans-serif;font-size:19px;font-weight:600;line-height:1.15;color:var(--text)}
+    .roast-tag{font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;
+               background:var(--bg3);border:1px solid var(--border);border-radius:2px;
+               white-space:nowrap;flex-shrink:0;margin-top:2px}
+    .card-chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px}
+    .chip{font-size:11px;color:var(--text-mid)}
+    .card-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+    .last-brewed{font-size:10px;color:var(--text-dim)}
+    .next-pill{font-size:10px;color:var(--amber);background:var(--amber-lo);
+               padding:3px 8px;border-radius:2px;max-width:180px;
+               overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-  .app-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+    /* ── ADD FAB ───────────────────────────────── */
+    #add-fab{position:fixed;bottom:22px;right:max(18px,calc(50vw - 222px));
+             width:50px;height:50px;background:var(--accent);border:none;border-radius:50%;
+             color:var(--bg);font-size:26px;cursor:pointer;display:flex;
+             align-items:center;justify-content:center;
+             box-shadow:0 4px 22px rgba(24,217,180,.4);transition:transform .12s;font-family:monospace}
+    #add-fab:active{transform:scale(.9)}
 
-  .header-btn {
-    background: var(--accent);
-    color: #0e0e10;
-    border: none;
-    border-radius: var(--radius-sm);
-    padding: 8px 14px;
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-    transition: opacity 0.15s;
-  }
-  .header-btn:active { opacity: 0.7; }
+    /* ── EMPTY ─────────────────────────────────── */
+    .empty{padding:64px 20px;text-align:center}
+    .empty-icon{font-size:32px;opacity:.25;margin-bottom:14px}
+    .empty-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:600;color:var(--text-mid);margin-bottom:6px}
+    .empty-sub{font-size:11px;color:var(--text-dim)}
 
-  /* ── NAV ── */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0; right: 0;
-    background: rgba(14,14,16,0.96);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-top: 1px solid var(--border);
-    display: flex;
-    padding-bottom: env(safe-area-inset-bottom);
-    z-index: 100;
-  }
+    /* ── STARS / PIPS ──────────────────────────── */
+    .stars{display:flex;gap:3px}
+    .star-on{color:var(--accent);font-size:14px}
+    .star-off{color:var(--border);font-size:14px}
+    .pips{display:flex;gap:5px;align-items:center;margin-top:5px}
+    .pip{width:20px;height:3px;border-radius:2px;background:var(--border)}
+    .pip.on{background:var(--accent)}
 
-  .nav-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 12px 8px;
-    border: none;
-    background: none;
-    color: var(--text3);
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    transition: color 0.2s;
-  }
-  .nav-btn.active { color: var(--accent); }
-  .nav-btn svg { width: 22px; height: 22px; }
+    /* ── DETAIL ────────────────────────────────── */
+    .detail{min-height:100vh;padding-bottom:32px}
+    .detail-header{padding:18px 16px;display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--border)}
+    .back{background:none;border:none;color:var(--text-mid);font-size:18px;cursor:pointer;padding:3px 0 0;flex-shrink:0}
+    .detail-name{font-family:'Syne',sans-serif;font-size:25px;font-weight:700;line-height:1.15}
+    .detail-sub{font-size:11px;color:var(--text-dim);margin-top:5px;line-height:1.7}
 
-  /* ── MAIN CONTENT ── */
-  .main {
-    padding: 16px 16px 100px;
-  }
+    /* ── NEXT-TIME BANNER ──────────────────────── */
+    .nt-banner{margin:14px 14px 0;background:var(--amber-lo);border:1px solid rgba(232,164,68,.3);
+               border-radius:2px;padding:11px 13px}
+    .nt-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:4px}
+    .nt-values{display:flex;gap:16px;flex-wrap:wrap}
+    .nt-val{font-size:12px;color:var(--text)}
+    .nt-val span{color:var(--text-mid);font-size:10px;margin-left:3px}
 
-  /* ── VIEWS ── */
-  .view { display: none; }
-  .view.active { display: block; }
+    /* ── SECTION ───────────────────────────────── */
+    .section{padding:18px 14px 0}
+    .sec-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:11px}
 
-  /* ── SECTION LABEL ── */
-  .section-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: var(--text3);
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    margin-top: 20px;
-  }
-  .section-label:first-child { margin-top: 4px; }
+    /* ── SETTINGS ROW ──────────────────────────── */
+    .settings-row{display:flex;gap:8px}
+    .setting-block{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:2px;
+                   padding:10px 8px 8px;text-align:center;cursor:pointer;transition:border-color .15s}
+    .setting-block:active{border-color:var(--accent)}
+    .setting-block.no-tap{cursor:default}
+    .setting-block.no-tap:active{border-color:var(--border)}
+    .sb-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px}
+    .sb-val{font-size:20px;font-weight:500;color:var(--text);line-height:1}
+    .sb-unit{font-size:10px;color:var(--text-dim);margin-top:2px}
+    /* Dose is directly editable */
+    .dose-input{width:100%;background:none;border:none;color:var(--text);font-family:'IBM Plex Mono',monospace;
+                font-size:20px;font-weight:500;text-align:center;outline:none;padding:0;
+                -moz-appearance:textfield}
+    .dose-input::-webkit-outer-spin-button,.dose-input::-webkit-inner-spin-button{-webkit-appearance:none}
+    .dose-input:focus{color:var(--accent)}
+    .dose-input::placeholder{color:var(--border)}
+    .water-calc{font-size:11px;color:var(--text-mid);text-align:center;margin-top:8px}
+    .water-calc strong{color:var(--text)}
 
-  /* ── COFFEE CARD ── */
-  .coffee-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: border-color 0.2s, transform 0.1s;
-    position: relative;
-    overflow: hidden;
-  }
-  .coffee-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: linear-gradient(180deg, var(--accent), var(--accent2));
-    border-radius: 0 2px 2px 0;
-  }
-  .coffee-card:active { transform: scale(0.98); border-color: var(--accent); }
-  .coffee-card.archived::before { background: var(--text3); }
-  .coffee-card.archived { opacity: 0.6; }
+    /* ── ROASTER NOTES ─────────────────────────── */
+    .rn-text{font-size:14px;color:var(--text-mid);line-height:1.65;font-style:italic}
 
-  .coffee-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-  }
+    /* ── COMMENTS ──────────────────────────────── */
+    .comment-box{font-size:12px;color:var(--text-mid);line-height:1.6;
+                 padding:11px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:2px}
 
-  .coffee-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.2;
-    flex: 1;
-    margin-right: 8px;
-  }
+    /* ── ACTIONS ───────────────────────────────── */
+    .actions{padding:18px 14px 0;display:flex;flex-direction:column;gap:8px}
+    .btn{width:100%;padding:13px;border-radius:2px;border:none;
+         font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;
+         text-transform:uppercase;cursor:pointer;transition:opacity .12s}
+    .btn:active{opacity:.65}
+    .btn-primary{background:var(--accent);color:var(--bg);font-weight:500}
+    .btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+    .btn-danger{background:transparent;color:var(--text-dim);border:1px solid var(--border)}
+    .btn-sm{padding:8px 12px;font-size:10px;width:auto}
 
-  .coffee-roaster {
-    font-size: 12px;
-    color: var(--accent);
-    font-weight: 400;
-    margin-bottom: 6px;
-  }
+    /* ── OVERLAY / MODAL ───────────────────────── */
+    .overlay{position:fixed;inset:0;background:rgba(5,9,14,.9);
+             display:flex;align-items:flex-end;justify-content:center;
+             z-index:200;animation:fadeIn .18s}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .modal{background:var(--bg2);border:1px solid var(--border);border-bottom:none;
+           border-radius:6px 6px 0 0;width:100%;max-width:480px;
+           padding:22px 16px 38px;max-height:92vh;overflow-y:auto;
+           animation:slideUp .22s cubic-bezier(.22,1,.36,1)}
+    @keyframes slideUp{from{transform:translateY(40px);opacity:.3}to{transform:translateY(0);opacity:1}}
+    .modal-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:3px}
+    .modal-sub{font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:20px}
 
-  .badge {
-    display: inline-block;
-    font-family: 'Syne', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    padding: 3px 8px;
-    border-radius: 20px;
-    text-transform: uppercase;
-  }
-  .badge-active { background: rgba(0,212,180,0.15); color: var(--accent2); border: 1px solid rgba(0,212,180,0.3); }
-  .badge-archived { background: rgba(90,88,96,0.2); color: var(--text3); border: 1px solid var(--border); }
+    /* ── FORM ──────────────────────────────────── */
+    .fg{margin-bottom:14px}
+    .fl{display:block;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px}
+    .fi,.fs,.ft{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:2px;
+                color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;
+                padding:9px 11px;outline:none;transition:border-color .18s;-webkit-appearance:none}
+    .fi:focus,.fs:focus,.ft:focus{border-color:var(--accent)}
+    .fi::placeholder,.ft::placeholder{color:var(--text-dim)}
+    .fs option{background:var(--bg3)}
+    .ft{resize:vertical;min-height:72px;line-height:1.5}
+    .fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 
-  .coffee-meta {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 8px;
-  }
-  .meta-chip {
-    font-size: 11px;
-    color: var(--text2);
-    background: var(--surface2);
-    padding: 3px 8px;
-    border-radius: 6px;
-  }
+    /* ── STAR INPUT ────────────────────────────── */
+    .star-inp{display:flex;gap:7px}
+    .star-btn{background:none;border:none;font-size:22px;cursor:pointer;
+              color:var(--border);transition:color .1s,transform .1s;padding:0;line-height:1}
+    .star-btn.on{color:var(--accent)}
+    .star-btn:active{transform:scale(1.3)}
+    .pip-btn{background:none;border:none;cursor:pointer;padding:6px 4px}
+    .pip-btn .pip{transition:background .1s}
 
-  .brew-count {
-    font-size: 12px;
-    color: var(--text3);
-    margin-top: 8px;
-  }
+    /* ── MODAL ACTIONS ─────────────────────────── */
+    .m-actions{display:flex;gap:8px;margin-top:16px}
+    .m-actions .btn{flex:1}
+    .m-actions .btn-primary{flex:2}
 
-  /* ── BREW CARD ── */
-  .brew-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: border-color 0.2s;
-  }
-  .brew-card:active { border-color: var(--accent2); }
+    /* ── DRUM PICKER ───────────────────────────── */
+    .drum-wrap{position:relative;overflow:hidden}
+    .drum-highlight{position:absolute;left:0;right:0;pointer-events:none;z-index:2;
+                    border-top:1px solid var(--accent);border-bottom:1px solid var(--accent)}
+    .drum-track{height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch}
 
-  .brew-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
+    /* ── PICKER MODAL ──────────────────────────── */
+    .picker-modal{padding:20px 16px 36px}
+    .drum-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+                color:var(--text-dim);text-align:center;margin-bottom:10px}
 
-  .brew-coffee-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-  }
+    /* ── POST-BREW DRUMS ───────────────────────── */
+    .pb-drums{display:flex;gap:0;border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-top:4px}
+    .pb-drum-col{flex:1;border-right:1px solid var(--border)}
+    .pb-drum-col:last-child{border-right:none}
+    .pb-drum-label{font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+                   color:var(--text-dim);text-align:center;padding:8px 0 6px;
+                   border-bottom:1px solid var(--border)}
 
-  .brew-date {
-    font-size: 11px;
-    color: var(--text3);
-  }
+    /* ── GRIND INPUT ───────────────────────────── */
+    .grind-wrap{display:flex;align-items:center;justify-content:center;gap:5px}
+    .grind-digit{width:48px;height:60px;background:var(--bg3);border:1px solid var(--border);
+                 border-radius:2px;color:var(--text);font-family:'IBM Plex Mono',monospace;
+                 font-size:26px;font-weight:500;text-align:center;outline:none;
+                 -webkit-appearance:none;transition:border-color .15s;caret-color:var(--accent)}
+    .grind-digit:focus{border-color:var(--accent)}
+    .grind-dot{font-size:20px;color:var(--text-mid);font-weight:500}
+    .grind-hint{font-size:10px;color:var(--text-dim);text-align:center;margin-top:8px}
 
-  .brew-brewer {
-    font-size: 12px;
-    color: var(--accent);
-    margin-bottom: 8px;
-  }
+    /* ── DETAIL EDIT BTN ───────────────────────── */
+    .det-edit-btn{background:none;border:1px solid var(--border);color:var(--text-dim);
+                  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;
+                  text-transform:uppercase;padding:6px 12px;cursor:pointer;border-radius:2px;
+                  transition:border-color .15s,color .15s;flex-shrink:0;margin-top:2px}
+    .det-edit-btn:active{border-color:var(--accent);color:var(--accent)}
 
-  .brew-specs {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 8px;
-  }
-
-  .spec-pill {
-    font-size: 11px;
-    color: var(--text2);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 3px 9px;
-    border-radius: 20px;
-  }
-
-  .rating-display {
-    display: flex;
-    gap: 2px;
-    align-items: center;
-  }
-  .rating-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--border);
-  }
-  .rating-dot.filled { background: var(--accent); }
-
-  .suggestion-preview {
-    background: rgba(255,107,53,0.08);
-    border: 1px solid rgba(255,107,53,0.2);
-    border-radius: var(--radius-sm);
-    padding: 8px 10px;
-    font-size: 11px;
-    color: var(--accent);
-    margin-top: 8px;
-    font-style: italic;
-  }
-
-  /* ── MODAL / SHEET ── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 200;
-    display: none;
-    align-items: flex-end;
-  }
-  .modal-overlay.open { display: flex; }
-
-  .modal-sheet {
-    background: var(--surface);
-    border-radius: 20px 20px 0 0;
-    width: 100%;
-    max-height: 92vh;
-    overflow-y: auto;
-    padding: 0 0 env(safe-area-inset-bottom);
-    animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1);
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-
-  .modal-handle {
-    width: 36px;
-    height: 4px;
-    background: var(--surface3);
-    border-radius: 2px;
-    margin: 12px auto 0;
-  }
-
-  .modal-header {
-    padding: 16px 20px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .modal-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px;
-    font-weight: 800;
-  }
-
-  .modal-close {
-    background: var(--surface2);
-    border: none;
-    color: var(--text2);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .modal-body {
-    padding: 16px 20px 24px;
-  }
-
-  /* ── FORM ELEMENTS ── */
-  .form-group {
-    margin-bottom: 16px;
-  }
-
-  .form-label {
-    display: block;
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 7px;
-  }
-
-  .form-input, .form-select, .form-textarea {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 15px;
-    outline: none;
-    transition: border-color 0.2s;
-    -webkit-appearance: none;
-    appearance: none;
-  }
-  .form-input:focus, .form-select:focus, .form-textarea:focus {
-    border-color: var(--accent);
-  }
-  .form-textarea { min-height: 80px; resize: none; }
-
-  .form-select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239997a0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 36px;
-  }
-
-  /* Ratio row */
-  .ratio-row {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 10px;
-    align-items: end;
-  }
-  .ratio-equals {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    color: var(--accent);
-    text-align: center;
-    padding-bottom: 10px;
-  }
-  .water-result {
-    background: var(--surface2);
-    border: 1px solid var(--accent);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-    color: var(--accent);
-    font-family: 'Syne', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    text-align: center;
-  }
-  .water-result-label {
-    font-size: 10px;
-    color: var(--text3);
-    text-align: center;
-    margin-top: 4px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 600;
-    letter-spacing: 1px;
-  }
-
-  /* Two col */
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  /* Tags */
-  .tag-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .tag-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 7px 13px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .tag-btn.selected {
-    background: rgba(255,107,53,0.15);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  .tag-btn.selected-good {
-    background: rgba(0,212,180,0.15);
-    border-color: var(--accent2);
-    color: var(--accent2);
-  }
-
-  /* Rating input */
-  .rating-input {
-    display: flex;
-    gap: 6px;
-  }
-  .rating-star {
-    font-size: 26px;
-    cursor: pointer;
-    transition: transform 0.1s;
-    user-select: none;
-  }
-  .rating-star:active { transform: scale(0.85); }
-
-  /* Bloom toggle */
-  .bloom-section { display: none; }
-  .bloom-section.visible { display: block; }
-
-  /* Submit btn */
-  .btn-primary {
-    width: 100%;
-    background: linear-gradient(135deg, var(--accent), #ff8c5a);
-    color: #0e0e10;
-    border: none;
-    border-radius: var(--radius);
-    padding: 16px;
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 800;
-    letter-spacing: 0.3px;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: opacity 0.2s, transform 0.1s;
-  }
-  .btn-primary:active { opacity: 0.85; transform: scale(0.99); }
-
-  .btn-secondary {
-    width: 100%;
-    background: var(--surface2);
-    color: var(--text2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px;
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 8px;
-  }
-
-  .btn-danger {
-    background: rgba(255,71,87,0.1);
-    color: var(--danger);
-    border: 1px solid rgba(255,71,87,0.25);
-    border-radius: var(--radius-sm);
-    padding: 10px 16px;
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 12px;
-  }
-
-  /* Divider */
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 20px 0;
-  }
-
-  /* Suggestion box */
-  .suggestion-box {
-    background: linear-gradient(135deg, rgba(255,107,53,0.08), rgba(0,212,180,0.05));
-    border: 1px solid rgba(255,107,53,0.3);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-top: 16px;
-  }
-  .suggestion-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .suggestion-item {
-    font-size: 13px;
-    color: var(--text2);
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(255,107,53,0.1);
-    line-height: 1.5;
-  }
-  .suggestion-item:last-child { border-bottom: none; }
-  .suggestion-item::before { content: '→ '; color: var(--accent); font-weight: 700; }
-
-  /* Detail view */
-  .detail-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-  .detail-section-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 12px;
-  }
-  .detail-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .detail-row:last-child { border-bottom: none; }
-  .detail-key {
-    font-size: 12px;
-    color: var(--text3);
-  }
-  .detail-val {
-    font-size: 13px;
-    color: var(--text);
-    text-align: right;
-    max-width: 60%;
-  }
-
-  .tasting-compare {
-    background: var(--surface2);
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    margin-top: 10px;
-  }
-  .compare-row {
-    display: grid;
-    grid-template-columns: 1fr 1px 1fr;
-    gap: 12px;
-    align-items: start;
-  }
-  .compare-divider { background: var(--border); width: 1px; }
-  .compare-col-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 6px;
-  }
-  .compare-notes {
-    font-size: 12px;
-    color: var(--text2);
-    line-height: 1.5;
-  }
-
-  /* Empty state */
-  .empty-state {
-    text-align: center;
-    padding: 48px 24px;
-    color: var(--text3);
-  }
-  .empty-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.4;
-  }
-  .empty-text {
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text2);
-    margin-bottom: 8px;
-  }
-  .empty-sub {
-    font-size: 13px;
-    line-height: 1.6;
-  }
-
-  /* Export btn small */
-  .export-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text2);
-    border-radius: var(--radius-sm);
-    padding: 8px 14px;
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  /* Step indicator */
-  .step-indicator {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 20px;
-  }
-  .step-dot {
-    height: 3px;
-    flex: 1;
-    border-radius: 2px;
-    background: var(--surface3);
-    transition: background 0.3s;
-  }
-  .step-dot.active { background: var(--accent); }
-  .step-dot.done { background: var(--accent2); }
-
-  .step-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text3);
-    margin-bottom: 16px;
-  }
-  .step-label span { color: var(--accent); }
-
-  /* Ratio select custom */
-  .ratio-select-wrapper {
-    position: relative;
-  }
-
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-  }
-
-  .num-input-row {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .num-input-row:focus-within { border-color: var(--accent); }
-  .num-btn {
-    background: var(--surface3);
-    border: none;
-    color: var(--text);
-    width: 42px;
-    height: 46px;
-    font-size: 20px;
-    cursor: pointer;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .num-btn:active { background: var(--accent); color: #0e0e10; }
-  .num-input {
-    flex: 1;
-    background: none;
-    border: none;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 16px;
-    text-align: center;
-    outline: none;
-    padding: 12px 4px;
-  }
-
-  .back-btn {
-    background: none;
-    border: none;
-    color: var(--text2);
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  /* Brew history in coffee detail */
-  .mini-brew-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    margin-bottom: 8px;
-    cursor: pointer;
-  }
-  .mini-brew-card:active { border-color: var(--accent2); }
-
-  .roast-level-display {
-    display: flex;
-    gap: 6px;
-  }
-  .roast-bar {
-    height: 4px;
-    flex: 1;
-    border-radius: 2px;
-    background: var(--border);
-    transition: background 0.3s;
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 0; }
-</style>
+    /* ── DIVIDER ───────────────────────────────── */
+    .divider{height:1px;background:var(--border);margin:0 14px}
+  </style>
 </head>
 <body>
-
-<div class="app-header">
-  <div class="app-title">☕ BREW LOG</div>
-  <div id="headerActions">
-    <button class="header-btn" onclick="openAddCoffeeModal()">+ COFFEE</button>
-  </div>
-</div>
-
-<!-- MAIN CONTENT -->
-<div class="main">
-
-  <!-- ── COFFEES VIEW ── -->
-  <div class="view active" id="view-coffees">
-    <div class="section-label">Active Bags</div>
-    <div id="activeCoffeesList"></div>
-    <div class="section-label">Archived</div>
-    <div id="archivedCoffeesList"></div>
-  </div>
-
-  <!-- ── BREWS VIEW ── -->
-  <div class="view" id="view-brews">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div class="section-label" style="margin:0">All Brews</div>
-      <button class="export-btn" onclick="exportCSV()">Export CSV</button>
-    </div>
-    <div id="allBrewsList" style="margin-top:12px"></div>
-  </div>
-
-  <!-- ── COFFEE DETAIL VIEW ── -->
-  <div class="view" id="view-coffee-detail">
-    <button class="back-btn" onclick="goBack()" style="margin-bottom:16px">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Back
-    </button>
-    <div id="coffeeDetailContent"></div>
-  </div>
-
-  <!-- ── BREW DETAIL VIEW ── -->
-  <div class="view" id="view-brew-detail">
-    <button class="back-btn" onclick="goBack()" style="margin-bottom:16px">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Back
-    </button>
-    <div id="brewDetailContent"></div>
-  </div>
-
-</div>
-
-<!-- ── BOTTOM NAV ── -->
-<nav class="bottom-nav">
-  <button class="nav-btn active" id="nav-coffees" onclick="switchView('coffees')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <path d="M3 6h18M3 12h18M3 18h18"/><circle cx="9" cy="6" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="18" r="1" fill="currentColor"/>
-    </svg>
-    Coffees
-  </button>
-  <button class="nav-btn" id="nav-brews" onclick="switchView('brews')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
-    </svg>
-    Brews
-  </button>
-</nav>
-
-<!-- ══════════════════════════════════════════
-     ADD COFFEE MODAL
-══════════════════════════════════════════ -->
-<div class="modal-overlay" id="addCoffeeModal">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="modal-title">New Coffee</div>
-      <button class="modal-close" onclick="closeModal('addCoffeeModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Roaster</label>
-        <input class="form-input" id="cf_roaster" placeholder="e.g. Heart, Pilot, Monogram" autocomplete="off">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Coffee Name</label>
-        <input class="form-input" id="cf_name" placeholder="e.g. Ethiopia Yirgacheffe" autocomplete="off">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Origin</label>
-          <input class="form-input" id="cf_origin" placeholder="e.g. Ethiopia" autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Process</label>
-          <select class="form-select" id="cf_process">
-            <option value="">Select</option>
-            <option>Washed</option>
-            <option>Natural</option>
-            <option>Honey</option>
-            <option>Anaerobic</option>
-            <option>Wet-Hulled</option>
-            <option>Other</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Roast Date</label>
-          <input class="form-input" type="date" id="cf_roastDate">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Roast Level</label>
-          <select class="form-select" id="cf_roastLevel">
-            <option value="">Select</option>
-            <option>Light</option>
-            <option>Light-Medium</option>
-            <option>Medium</option>
-            <option>Medium-Dark</option>
-            <option>Dark</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Advertised Tasting Notes</label>
-        <input class="form-input" id="cf_advertisedNotes" placeholder="e.g. jasmine, blueberry, dark chocolate" autocomplete="off">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Status</label>
-        <select class="form-select" id="cf_status">
-          <option value="active">Active (current bag)</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-      <button class="btn-primary" onclick="saveCoffee()">Save Coffee</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     ADD BREW MODAL — Step 1: Brew Parameters
-══════════════════════════════════════════ -->
-<div class="modal-overlay" id="addBrewModal">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="modal-title">New Brew</div>
-      <button class="modal-close" onclick="closeModal('addBrewModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="step-indicator">
-        <div class="step-dot active" id="step1dot"></div>
-        <div class="step-dot" id="step2dot"></div>
-      </div>
-
-      <!-- STEP 1 -->
-      <div id="brewStep1">
-        <div class="step-label">Step <span>1 of 2</span> — Brew Setup</div>
-
-        <div class="form-group">
-          <label class="form-label">Coffee</label>
-          <select class="form-select" id="br_coffeeId">
-            <option value="">Select coffee</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Brewer</label>
-          <select class="form-select" id="br_brewer" onchange="onBrewerChange()">
-            <option value="">Select brewer</option>
-            <option>V60</option>
-            <option>French Press</option>
-            <option>AeroPress</option>
-            <option>OXO Brew</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Brew Date</label>
-            <input class="form-input" type="date" id="br_brewDate">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Grind Setting</label>
-            <input class="form-input" id="br_grindSetting" placeholder="e.g. 20, 3.2" autocomplete="off">
-          </div>
-        </div>
-
-        <!-- RATIO CALCULATOR -->
-        <div class="form-group">
-          <label class="form-label">Dose & Ratio → Water</label>
-          <div class="ratio-row">
-            <div>
-              <div class="num-input-row">
-                <button class="num-btn" onclick="adjustNum('br_dose', -0.5)">−</button>
-                <input class="num-input" type="number" id="br_dose" value="15" step="0.5" oninput="calcWater()">
-                <button class="num-btn" onclick="adjustNum('br_dose', 0.5)">+</button>
-              </div>
-              <div class="water-result-label">DOSE (g)</div>
-            </div>
-            <div>
-              <select class="form-select" id="br_ratio" onchange="calcWater()" style="text-align:center;font-size:13px;">
-                <option value="13">1:13</option>
-                <option value="13.5">1:13.5</option>
-                <option value="14">1:14</option>
-                <option value="14.5">1:14.5</option>
-                <option value="15">1:15</option>
-                <option value="15.5">1:15.5</option>
-                <option value="16" selected>1:16</option>
-                <option value="16.5">1:16.5</option>
-                <option value="17">1:17</option>
-                <option value="17.5">1:17.5</option>
-                <option value="18">1:18</option>
-              </select>
-              <div class="water-result-label">RATIO</div>
-            </div>
-            <div>
-              <div class="water-result" id="waterResult">240g</div>
-              <div class="water-result-label">WATER (g)</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Brew Temp (°C)</label>
-            <div class="num-input-row">
-              <button class="num-btn" onclick="adjustNum('br_temp', -1)">−</button>
-              <input class="num-input" type="number" id="br_temp" value="93" step="1" min="60" max="100">
-              <button class="num-btn" onclick="adjustNum('br_temp', 1)">+</button>
-            </div>
-          </div>
-          <div class="form-group" id="yieldGroup" style="display:none">
-            <label class="form-label">Yield Out (g)</label>
-            <input class="form-input" type="number" id="br_yield" placeholder="e.g. 36">
-          </div>
-        </div>
-
-        <!-- BLOOM (V60 / AeroPress) -->
-        <div class="bloom-section" id="bloomSection">
-          <div class="form-group">
-            <label class="form-label">Bloom</label>
-            <div class="form-row">
-              <div>
-                <input class="form-input" type="number" id="br_bloomWater" placeholder="Water (g)">
-                <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:'Syne',sans-serif;letter-spacing:0.5px">BLOOM WATER</div>
-              </div>
-              <div>
-                <input class="form-input" type="number" id="br_bloomTime" placeholder="Time (sec)">
-                <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:'Syne',sans-serif;letter-spacing:0.5px">BLOOM TIME</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Recipe Notes</label>
-          <textarea class="form-textarea" id="br_recipeNotes" placeholder="Pour sequence, technique notes…"></textarea>
-        </div>
-
-        <button class="btn-primary" onclick="goToBrewStep2()">Next: Tasting →</button>
-      </div>
-
-      <!-- STEP 2 -->
-      <div id="brewStep2" style="display:none">
-        <div class="step-label">Step <span>2 of 2</span> — Tasting</div>
-
-        <div class="form-group">
-          <label class="form-label">Perceived Roast Level</label>
-          <select class="form-select" id="br_perceivedRoast">
-            <option value="">Select</option>
-            <option>Light</option>
-            <option>Light-Medium</option>
-            <option>Medium</option>
-            <option>Medium-Dark</option>
-            <option>Dark</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Tasting Notes (your perception)</label>
-          <input class="form-input" id="br_perceivedNotes" placeholder="e.g. stone fruit, caramel, citrus" autocomplete="off">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">How did it taste? (select all that apply)</label>
-          <div class="tag-group" id="descriptorTags">
-            <button class="tag-btn" data-val="sour" onclick="toggleTag(this)">Sour / Underdeveloped</button>
-            <button class="tag-btn" data-val="bitter" onclick="toggleTag(this)">Bitter / Harsh</button>
-            <button class="tag-btn" data-val="weak" onclick="toggleTag(this)">Weak / Watery</button>
-            <button class="tag-btn" data-val="flat" onclick="toggleTag(this)">Flat / No Clarity</button>
-            <button class="tag-btn" data-val="astringent" onclick="toggleTag(this)">Astringent / Drying</button>
-            <button class="tag-btn" data-val="heavy" onclick="toggleTag(this)">Too Heavy / Muddy</button>
-            <button class="tag-btn" data-val="balanced" onclick="toggleTag(this, true)">✓ Balanced</button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Rating</label>
-          <div class="rating-input" id="ratingInput">
-            <span class="rating-star" data-val="1" onclick="setRating(1)">○</span>
-            <span class="rating-star" data-val="2" onclick="setRating(2)">○</span>
-            <span class="rating-star" data-val="3" onclick="setRating(3)">○</span>
-            <span class="rating-star" data-val="4" onclick="setRating(4)">○</span>
-            <span class="rating-star" data-val="5" onclick="setRating(5)">○</span>
-            <span class="rating-star" data-val="6" onclick="setRating(6)">○</span>
-            <span class="rating-star" data-val="7" onclick="setRating(7)">○</span>
-            <span class="rating-star" data-val="8" onclick="setRating(8)">○</span>
-            <span class="rating-star" data-val="9" onclick="setRating(9)">○</span>
-            <span class="rating-star" data-val="10" onclick="setRating(10)">○</span>
-          </div>
-          <div id="ratingLabel" style="font-size:12px;color:var(--text3);margin-top:6px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:1px"></div>
-        </div>
-
-        <div style="display:flex;gap:10px">
-          <button class="btn-secondary" style="margin:0" onclick="goToBrewStep1()">← Back</button>
-          <button class="btn-primary" style="margin:0;flex:1" onclick="saveBrew()">Save Brew</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     EDIT COFFEE MODAL
-══════════════════════════════════════════ -->
-<div class="modal-overlay" id="editCoffeeModal">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="modal-title">Edit Coffee</div>
-      <button class="modal-close" onclick="closeModal('editCoffeeModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="edit_coffeeId">
-      <div class="form-group">
-        <label class="form-label">Roaster</label>
-        <input class="form-input" id="edit_roaster" autocomplete="off">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Coffee Name</label>
-        <input class="form-input" id="edit_name" autocomplete="off">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Origin</label>
-          <input class="form-input" id="edit_origin" autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Process</label>
-          <select class="form-select" id="edit_process">
-            <option value="">Select</option>
-            <option>Washed</option>
-            <option>Natural</option>
-            <option>Honey</option>
-            <option>Anaerobic</option>
-            <option>Wet-Hulled</option>
-            <option>Other</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Roast Date</label>
-          <input class="form-input" type="date" id="edit_roastDate">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Roast Level</label>
-          <select class="form-select" id="edit_roastLevel">
-            <option value="">Select</option>
-            <option>Light</option>
-            <option>Light-Medium</option>
-            <option>Medium</option>
-            <option>Medium-Dark</option>
-            <option>Dark</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Advertised Tasting Notes</label>
-        <input class="form-input" id="edit_advertisedNotes" autocomplete="off">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Status</label>
-        <select class="form-select" id="edit_status">
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-      <button class="btn-primary" onclick="updateCoffee()">Update Coffee</button>
-      <button class="btn-danger" onclick="deleteCoffee()">Delete Coffee</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     SUGGESTIONS MODAL
-══════════════════════════════════════════ -->
-<div class="modal-overlay" id="suggestionsModal">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="modal-title">Next Time →</div>
-      <button class="modal-close" onclick="closeModal('suggestionsModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div id="suggestionsContent"></div>
-      <button class="btn-primary" style="margin-top:16px" onclick="closeModal('suggestionsModal')">Got it</button>
-    </div>
-  </div>
-</div>
-
+<div id="app"></div>
 <script>
-// ══════════════════════════════════════════
-// DATA LAYER
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════
+//  STORAGE
+// ════════════════════════════════════════════
+const STORE = 'dial_v2';
 
-function loadData() {
-  return {
-    coffees: JSON.parse(localStorage.getItem('bl_coffees') || '[]'),
-    brews: JSON.parse(localStorage.getItem('bl_brews') || '[]')
-  };
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORE));
+    return d || { coffees: [], roasters: [] };
+  } catch(e) { return { coffees: [], roasters: [] }; }
 }
 
-function saveData(data) {
-  localStorage.setItem('bl_coffees', JSON.stringify(data.coffees));
-  localStorage.setItem('bl_brews', JSON.stringify(data.brews));
+function save() {
+  localStorage.setItem(STORE, JSON.stringify({
+    coffees: S.coffees,
+    roasters: S.roasters
+  }));
 }
 
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
+const S = { ...load(), view:'home', tab:'active', selectedId:null, modal:null };
+if (!S.roasters) S.roasters = [];
 
-// ══════════════════════════════════════════
-// VIEW ROUTING
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════
+const TEMP_OPTS  = Array.from({length:20}, (_,i) => ({ value:80+i, label:`${80+i}°` }));
+const RATIO_OPTS = [14,14.5,15,15.5,16,16.5,17,17.5,18].map(v => ({
+  value: v, label: `1 : ${v % 1 === 0 ? v+'.0' : v}`
+}));
 
-let currentView = 'coffees';
-let viewHistory = [];
+// Active drum picker instances
+let drums = {};
 
-function switchView(view) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('view-' + view).classList.add('active');
-  const navBtn = document.getElementById('nav-' + view);
-  if (navBtn) navBtn.classList.add('active');
-  currentView = view;
-  viewHistory = [];
-  renderAll();
-}
-
-function openDetailView(view, renderFn) {
-  viewHistory.push(currentView);
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + view).classList.add('active');
-  currentView = view;
-  renderFn();
-}
-
-function goBack() {
-  const prev = viewHistory.pop() || 'coffees';
-  switchView(prev);
-}
-
-// ══════════════════════════════════════════
-// RENDER
-// ══════════════════════════════════════════
-
-function renderAll() {
-  renderCoffees();
-  renderBrews();
-}
-
-function renderCoffees() {
-  const { coffees, brews } = loadData();
-  const active = coffees.filter(c => c.status === 'active');
-  const archived = coffees.filter(c => c.status === 'archived');
-
-  document.getElementById('activeCoffeesList').innerHTML = active.length
-    ? active.map(c => coffeeCardHTML(c, brews)).join('')
-    : '<div class="empty-state"><div class="empty-icon">☕</div><div class="empty-text">No active bags</div><div class="empty-sub">Tap + Coffee to add your current bag</div></div>';
-
-  document.getElementById('archivedCoffeesList').innerHTML = archived.length
-    ? archived.map(c => coffeeCardHTML(c, brews)).join('')
-    : '<div style="color:var(--text3);font-size:13px;padding:8px 0 16px">None yet</div>';
-}
-
-function coffeeCardHTML(coffee, brews) {
-  const brewCount = brews.filter(b => b.coffeeId === coffee.id).length;
-  const roastDaysAgo = coffee.roastDate
-    ? Math.floor((new Date() - new Date(coffee.roastDate)) / 86400000)
-    : null;
-  return `
-    <div class="coffee-card ${coffee.status === 'archived' ? 'archived' : ''}" onclick="openCoffeeDetail('${coffee.id}')">
-      <div class="coffee-card-header">
-        <div class="coffee-name">${coffee.name || 'Unnamed'}</div>
-        <span class="badge badge-${coffee.status}">${coffee.status}</span>
-      </div>
-      <div class="coffee-roaster">${coffee.roaster || ''}</div>
-      <div class="coffee-meta">
-        ${coffee.origin ? `<span class="meta-chip">📍 ${coffee.origin}</span>` : ''}
-        ${coffee.process ? `<span class="meta-chip">${coffee.process}</span>` : ''}
-        ${coffee.roastLevel ? `<span class="meta-chip">${coffee.roastLevel}</span>` : ''}
-        ${roastDaysAgo !== null ? `<span class="meta-chip">${roastDaysAgo}d since roast</span>` : ''}
-      </div>
-      ${coffee.advertisedNotes ? `<div style="font-size:11px;color:var(--text3);margin-top:8px;font-style:italic">"${coffee.advertisedNotes}"</div>` : ''}
-      <div class="brew-count">${brewCount} brew${brewCount !== 1 ? 's' : ''} logged</div>
-    </div>`;
-}
-
-function renderBrews() {
-  const { coffees, brews } = loadData();
-  const sorted = [...brews].sort((a, b) => new Date(b.brewDate) - new Date(a.brewDate));
-  document.getElementById('allBrewsList').innerHTML = sorted.length
-    ? sorted.map(b => {
-        const coffee = coffees.find(c => c.id === b.coffeeId);
-        return brewCardHTML(b, coffee);
-      }).join('')
-    : '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No brews yet</div><div class="empty-sub">Open a coffee and tap New Brew</div></div>';
-}
-
-function brewCardHTML(brew, coffee) {
-  const dots = Array.from({length: 10}, (_, i) =>
-    `<div class="rating-dot ${i < (brew.rating || 0) ? 'filled' : ''}"></div>`).join('');
-  const suggestion = brew.suggestions && brew.suggestions.length
-    ? `<div class="suggestion-preview">💡 ${brew.suggestions[0]}</div>` : '';
-  return `
-    <div class="brew-card" onclick="openBrewDetail('${brew.id}')">
-      <div class="brew-card-top">
-        <div class="brew-coffee-name">${coffee ? coffee.name : 'Unknown'}</div>
-        <div class="brew-date">${formatDate(brew.brewDate)}</div>
-      </div>
-      <div class="brew-brewer">${brew.brewer || ''}</div>
-      <div class="brew-specs">
-        ${brew.dose ? `<span class="spec-pill">${brew.dose}g dose</span>` : ''}
-        ${brew.water ? `<span class="spec-pill">${brew.water}g water</span>` : ''}
-        ${brew.ratio ? `<span class="spec-pill">1:${brew.ratio}</span>` : ''}
-        ${brew.temp ? `<span class="spec-pill">${brew.temp}°C</span>` : ''}
-        ${brew.grindSetting ? `<span class="spec-pill">grind ${brew.grindSetting}</span>` : ''}
-      </div>
-      ${brew.rating ? `<div class="rating-display">${dots}</div>` : ''}
-      ${suggestion}
-    </div>`;
-}
-
-// ══════════════════════════════════════════
-// COFFEE DETAIL
-// ══════════════════════════════════════════
-
-let currentCoffeeId = null;
-
-function openCoffeeDetail(coffeeId) {
-  currentCoffeeId = coffeeId;
-  openDetailView('coffee-detail', () => {
-    const { coffees, brews } = loadData();
-    const coffee = coffees.find(c => c.id === coffeeId);
-    if (!coffee) return;
-    const coffeeBrews = brews.filter(b => b.coffeeId === coffeeId)
-      .sort((a, b) => new Date(b.brewDate) - new Date(a.brewDate));
-
-    document.getElementById('headerActions').innerHTML =
-      `<button class="header-btn" onclick="openAddBrewModal('${coffeeId}')">+ BREW</button>`;
-
-    document.getElementById('coffeeDetailContent').innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-        <div>
-          <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1.1">${coffee.name || 'Unnamed'}</div>
-          <div style="color:var(--accent);font-size:14px;margin-top:4px">${coffee.roaster || ''}</div>
-        </div>
-        <button class="badge badge-${coffee.status}" onclick="openEditCoffeeModal('${coffeeId}')" style="cursor:pointer;border:none;font-size:11px">${coffee.status} ✎</button>
-      </div>
-
-      <div class="detail-section" style="margin-top:16px">
-        <div class="detail-section-title">Origin & Process</div>
-        ${detailRow('Origin', coffee.origin)}
-        ${detailRow('Process', coffee.process)}
-        ${detailRow('Roast Level', coffee.roastLevel)}
-        ${detailRow('Roast Date', coffee.roastDate ? formatDate(coffee.roastDate) + ' (' + Math.floor((new Date()-new Date(coffee.roastDate))/86400000) + 'd ago)' : '')}
-      </div>
-
-      <div class="detail-section">
-        <div class="detail-section-title">Tasting Notes</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:4px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:1px">ADVERTISED</div>
-        <div style="font-size:14px;color:var(--text2);margin-bottom:12px;font-style:italic">${coffee.advertisedNotes || '—'}</div>
-      </div>
-
-      <div class="section-label" style="margin-top:8px">Brew History (${coffeeBrews.length})</div>
-      ${coffeeBrews.length ? coffeeBrews.map(b => miniBrewCard(b)).join('') :
-        '<div style="color:var(--text3);font-size:13px;padding:12px 0">No brews yet. Tap + Brew to start.</div>'}
-    `;
-  });
-}
-
-function miniBrewCard(brew) {
-  const dots = Array.from({length: 10}, (_, i) =>
-    `<div class="rating-dot ${i < (brew.rating || 0) ? 'filled' : ''}"></div>`).join('');
-  return `
-    <div class="mini-brew-card" onclick="openBrewDetail('${brew.id}')">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-        <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--accent)">${brew.brewer || ''}</span>
-        <span style="font-size:12px;color:var(--text3)">${formatDate(brew.brewDate)}</span>
-      </div>
-      <div class="brew-specs" style="margin-bottom:6px">
-        ${brew.dose ? `<span class="spec-pill">${brew.dose}g</span>` : ''}
-        ${brew.ratio ? `<span class="spec-pill">1:${brew.ratio}</span>` : ''}
-        ${brew.temp ? `<span class="spec-pill">${brew.temp}°C</span>` : ''}
-        ${brew.grindSetting ? `<span class="spec-pill">grind ${brew.grindSetting}</span>` : ''}
-      </div>
-      ${brew.perceivedNotes ? `<div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:6px">${brew.perceivedNotes}</div>` : ''}
-      ${brew.rating ? `<div class="rating-display">${dots}</div>` : ''}
-    </div>`;
-}
-
-function detailRow(key, val) {
-  if (!val) return '';
-  return `<div class="detail-row"><span class="detail-key">${key}</span><span class="detail-val">${val}</span></div>`;
-}
-
-// ══════════════════════════════════════════
-// BREW DETAIL
-// ══════════════════════════════════════════
-
-function openBrewDetail(brewId) {
-  openDetailView('brew-detail', () => {
-    const { coffees, brews } = loadData();
-    const brew = brews.find(b => b.id === brewId);
-    if (!brew) return;
-    const coffee = coffees.find(c => c.id === brew.coffeeId);
-
-    document.getElementById('headerActions').innerHTML =
-      `<button class="header-btn" style="background:var(--danger)" onclick="deleteBrew('${brewId}')">Delete</button>`;
-
-    const suggBox = brew.suggestions && brew.suggestions.length ? `
-      <div class="suggestion-box">
-        <div class="suggestion-title">💡 Next Brew Suggestions</div>
-        ${brew.suggestions.map(s => `<div class="suggestion-item">${s}</div>`).join('')}
-      </div>` : '';
-
-    const descriptorLabels = {
-      sour: 'Sour / Underdeveloped', bitter: 'Bitter / Harsh',
-      weak: 'Weak / Watery', flat: 'Flat / No Clarity',
-      astringent: 'Astringent / Drying', heavy: 'Too Heavy / Muddy',
-      balanced: '✓ Balanced'
-    };
-
-    document.getElementById('brewDetailContent').innerHTML = `
-      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4px">
-        ${coffee ? coffee.name : 'Unknown Coffee'}
-      </div>
-      <div style="color:var(--accent);font-size:13px;margin-bottom:16px">${brew.brewer || ''} · ${formatDate(brew.brewDate)}</div>
-
-      <div class="detail-section">
-        <div class="detail-section-title">Brew Parameters</div>
-        ${detailRow('Dose', brew.dose ? brew.dose + 'g' : '')}
-        ${detailRow('Ratio', brew.ratio ? '1:' + brew.ratio : '')}
-        ${detailRow('Water', brew.water ? brew.water + 'g' : '')}
-        ${brew.yieldOut ? detailRow('Yield Out', brew.yieldOut + 'g') : ''}
-        ${detailRow('Temp', brew.temp ? brew.temp + '°C' : '')}
-        ${detailRow('Grind Setting', brew.grindSetting)}
-        ${brew.bloomWater ? detailRow('Bloom Water', brew.bloomWater + 'g') : ''}
-        ${brew.bloomTime ? detailRow('Bloom Time', brew.bloomTime + 's') : ''}
-        ${brew.recipeNotes ? detailRow('Notes', brew.recipeNotes) : ''}
-      </div>
-
-      <div class="detail-section">
-        <div class="detail-section-title">Tasting</div>
-        ${detailRow('Perceived Roast', brew.perceivedRoast)}
-        ${brew.rating ? detailRow('Rating', brew.rating + ' / 10') : ''}
-        ${brew.descriptors && brew.descriptors.length ? detailRow('Descriptors', brew.descriptors.map(d => descriptorLabels[d] || d).join(', ')) : ''}
-      </div>
-
-      ${(brew.perceivedNotes || (coffee && coffee.advertisedNotes)) ? `
-      <div class="detail-section">
-        <div class="detail-section-title">Tasting Notes Comparison</div>
-        <div class="tasting-compare">
-          <div class="compare-row">
-            <div>
-              <div class="compare-col-label">Advertised</div>
-              <div class="compare-notes">${coffee && coffee.advertisedNotes ? coffee.advertisedNotes : '—'}</div>
-            </div>
-            <div class="compare-divider"></div>
-            <div>
-              <div class="compare-col-label">Your Taste</div>
-              <div class="compare-notes">${brew.perceivedNotes || '—'}</div>
-            </div>
-          </div>
-        </div>
-      </div>` : ''}
-
-      ${suggBox}
-    `;
-  });
-}
-
-// ══════════════════════════════════════════
-// SUGGESTIONS ENGINE
-// ══════════════════════════════════════════
-
-function generateSuggestions(descriptors, brewer, dose, ratio, temp, grindSetting) {
-  if (!descriptors || descriptors.length === 0) return [];
-  if (descriptors.includes('balanced')) return ['Your recipe is dialled in — keep it exactly as is next time! ☕'];
-
-  const suggestions = [];
-  const b = brewer || '';
-
-  if (descriptors.includes('sour')) {
-    suggestions.push('Grind finer to increase extraction');
-    suggestions.push(`Increase brew temp by 2–3°C (try ${Math.min(100, (parseInt(temp)||93) + 2)}°C)`);
-    if (b === 'V60' || b === 'AeroPress') suggestions.push('Extend bloom time by 10–15 seconds');
-    if (b === 'French Press') suggestions.push('Extend steep time by 30–60 seconds');
+// ════════════════════════════════════════════
+//  DRUM PICKER
+// ════════════════════════════════════════════
+class Drum {
+  constructor(el, opts, initVal) {
+    this.el   = el;
+    this.opts = opts;
+    this.ih   = 46;
+    this._val = initVal;
+    this._build();
   }
 
-  if (descriptors.includes('bitter')) {
-    suggestions.push('Grind coarser to reduce extraction');
-    suggestions.push(`Lower brew temp by 2–3°C (try ${Math.max(80, (parseInt(temp)||93) - 2)}°C)`);
-    if (b === 'French Press') suggestions.push('Shorten steep time by 30 seconds');
-    if (b === 'AeroPress') suggestions.push('Try a shorter steep or inverted method');
-  }
+  _build() {
+    const pad = 2; // items above/below selected
+    const h   = this.ih * (pad*2+1);
 
-  if (descriptors.includes('weak')) {
-    suggestions.push('Increase your dose by 1–2g');
-    suggestions.push(`Try a tighter ratio — e.g. 1:${Math.max(13, parseFloat(ratio||16) - 1)}`);
-    suggestions.push('Grind slightly finer to increase extraction');
-  }
+    this.el.style.cssText = `height:${h}px;overflow:hidden;position:relative;`;
+    this.el.style.webkitMaskImage =
+      'linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.4) 22%,black 40%,black 60%,rgba(0,0,0,.4) 78%,transparent 100%)';
+    this.el.style.maskImage = this.el.style.webkitMaskImage;
 
-  if (descriptors.includes('flat')) {
-    suggestions.push('Grind finer for better extraction clarity');
-    suggestions.push('Try fresher water (filtered) if you haven\'t already');
-    if (b === 'V60') suggestions.push('Slow down your pours slightly for more even extraction');
-  }
+    // Highlight bar
+    const bar = document.createElement('div');
+    bar.className = 'drum-highlight';
+    bar.style.top = `${pad * this.ih}px`;
+    bar.style.height = `${this.ih}px`;
+    this.el.appendChild(bar);
 
-  if (descriptors.includes('astringent')) {
-    suggestions.push(`Lower brew temp by 3°C (try ${Math.max(80, (parseInt(temp)||93) - 3)}°C)`);
-    suggestions.push('Grind coarser and shorten contact time');
-    if (b === 'French Press') suggestions.push('Plunge earlier or switch to a metal filter');
-  }
+    // Track
+    const track = document.createElement('div');
+    track.className = 'drum-track';
+    track.style.height = '100%';
 
-  if (descriptors.includes('heavy')) {
-    suggestions.push('Grind coarser to reduce body');
-    if (b === 'French Press') suggestions.push('Shorten steep time by 30–45 seconds');
-    suggestions.push(`Try a wider ratio — e.g. 1:${Math.min(18, parseFloat(ratio||16) + 0.5)}`);
-  }
+    // Top padding
+    for (let i=0;i<pad;i++) track.appendChild(this._sp());
 
-  return [...new Set(suggestions)].slice(0, 4);
-}
-
-// ══════════════════════════════════════════
-// ADD COFFEE
-// ══════════════════════════════════════════
-
-function openAddCoffeeModal() {
-  document.getElementById('cf_roaster').value = '';
-  document.getElementById('cf_name').value = '';
-  document.getElementById('cf_origin').value = '';
-  document.getElementById('cf_process').value = '';
-  document.getElementById('cf_roastDate').value = '';
-  document.getElementById('cf_roastLevel').value = '';
-  document.getElementById('cf_advertisedNotes').value = '';
-  document.getElementById('cf_status').value = 'active';
-  openModal('addCoffeeModal');
-}
-
-function saveCoffee() {
-  const data = loadData();
-  const coffee = {
-    id: uid(),
-    roaster: document.getElementById('cf_roaster').value.trim(),
-    name: document.getElementById('cf_name').value.trim(),
-    origin: document.getElementById('cf_origin').value.trim(),
-    process: document.getElementById('cf_process').value,
-    roastDate: document.getElementById('cf_roastDate').value,
-    roastLevel: document.getElementById('cf_roastLevel').value,
-    advertisedNotes: document.getElementById('cf_advertisedNotes').value.trim(),
-    status: document.getElementById('cf_status').value,
-    createdAt: new Date().toISOString()
-  };
-  if (!coffee.name && !coffee.roaster) { alert('Please enter at least a name or roaster.'); return; }
-  data.coffees.push(coffee);
-  saveData(data);
-  closeModal('addCoffeeModal');
-  renderCoffees();
-}
-
-// ══════════════════════════════════════════
-// EDIT COFFEE
-// ══════════════════════════════════════════
-
-function openEditCoffeeModal(coffeeId) {
-  const { coffees } = loadData();
-  const c = coffees.find(x => x.id === coffeeId);
-  if (!c) return;
-  document.getElementById('edit_coffeeId').value = coffeeId;
-  document.getElementById('edit_roaster').value = c.roaster || '';
-  document.getElementById('edit_name').value = c.name || '';
-  document.getElementById('edit_origin').value = c.origin || '';
-  document.getElementById('edit_process').value = c.process || '';
-  document.getElementById('edit_roastDate').value = c.roastDate || '';
-  document.getElementById('edit_roastLevel').value = c.roastLevel || '';
-  document.getElementById('edit_advertisedNotes').value = c.advertisedNotes || '';
-  document.getElementById('edit_status').value = c.status || 'active';
-  openModal('editCoffeeModal');
-}
-
-function updateCoffee() {
-  const data = loadData();
-  const id = document.getElementById('edit_coffeeId').value;
-  const idx = data.coffees.findIndex(c => c.id === id);
-  if (idx === -1) return;
-  data.coffees[idx] = {
-    ...data.coffees[idx],
-    roaster: document.getElementById('edit_roaster').value.trim(),
-    name: document.getElementById('edit_name').value.trim(),
-    origin: document.getElementById('edit_origin').value.trim(),
-    process: document.getElementById('edit_process').value,
-    roastDate: document.getElementById('edit_roastDate').value,
-    roastLevel: document.getElementById('edit_roastLevel').value,
-    advertisedNotes: document.getElementById('edit_advertisedNotes').value.trim(),
-    status: document.getElementById('edit_status').value
-  };
-  saveData(data);
-  closeModal('editCoffeeModal');
-  if (currentView === 'coffee-detail' && currentCoffeeId === id) {
-    openCoffeeDetail(id);
-  } else {
-    renderCoffees();
-  }
-}
-
-function deleteCoffee() {
-  if (!confirm('Delete this coffee and all its brews?')) return;
-  const id = document.getElementById('edit_coffeeId').value;
-  const data = loadData();
-  data.coffees = data.coffees.filter(c => c.id !== id);
-  data.brews = data.brews.filter(b => b.coffeeId !== id);
-  saveData(data);
-  closeModal('editCoffeeModal');
-  switchView('coffees');
-}
-
-// ══════════════════════════════════════════
-// ADD BREW
-// ══════════════════════════════════════════
-
-let currentRating = 0;
-let selectedDescriptors = [];
-
-function openAddBrewModal(preselectedCoffeeId) {
-  // Reset step 1
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('br_brewDate').value = today;
-  document.getElementById('br_brewer').value = '';
-  document.getElementById('br_dose').value = '15';
-  document.getElementById('br_ratio').value = '16';
-  document.getElementById('br_temp').value = '93';
-  document.getElementById('br_grindSetting').value = '';
-  document.getElementById('br_bloomWater').value = '';
-  document.getElementById('br_bloomTime').value = '';
-  document.getElementById('br_recipeNotes').value = '';
-  document.getElementById('br_yield').value = '';
-  document.getElementById('bloomSection').classList.remove('visible');
-  document.getElementById('yieldGroup').style.display = 'none';
-  calcWater();
-
-  // Reset step 2
-  currentRating = 0;
-  selectedDescriptors = [];
-  document.getElementById('br_perceivedRoast').value = '';
-  document.getElementById('br_perceivedNotes').value = '';
-  document.querySelectorAll('#descriptorTags .tag-btn').forEach(t => t.classList.remove('selected', 'selected-good'));
-  updateRatingDisplay();
-
-  // Populate coffee select
-  const { coffees } = loadData();
-  const sel = document.getElementById('br_coffeeId');
-  sel.innerHTML = '<option value="">Select coffee</option>' +
-    coffees.map(c => `<option value="${c.id}" ${c.id === preselectedCoffeeId ? 'selected' : ''}>${c.name} (${c.roaster || '?'})</option>`).join('');
-
-  // Show step 1
-  document.getElementById('brewStep1').style.display = 'block';
-  document.getElementById('brewStep2').style.display = 'none';
-  document.getElementById('step1dot').className = 'step-dot active';
-  document.getElementById('step2dot').className = 'step-dot';
-
-  openModal('addBrewModal');
-}
-
-function onBrewerChange() {
-  const brewer = document.getElementById('br_brewer').value;
-  const bloom = document.getElementById('bloomSection');
-  const yieldGroup = document.getElementById('yieldGroup');
-  bloom.classList.toggle('visible', brewer === 'V60' || brewer === 'AeroPress');
-  yieldGroup.style.display = brewer === 'AeroPress' ? 'block' : 'none';
-}
-
-function calcWater() {
-  const dose = parseFloat(document.getElementById('br_dose').value) || 0;
-  const ratio = parseFloat(document.getElementById('br_ratio').value) || 16;
-  const water = Math.round(dose * ratio);
-  document.getElementById('waterResult').textContent = water + 'g';
-}
-
-function adjustNum(id, delta) {
-  const el = document.getElementById(id);
-  const val = parseFloat(el.value) || 0;
-  el.value = Math.round((val + delta) * 10) / 10;
-  if (id === 'br_dose') calcWater();
-}
-
-function toggleTag(btn, isGood) {
-  const val = btn.dataset.val;
-  if (isGood) {
-    // Balanced = clear all others
-    document.querySelectorAll('#descriptorTags .tag-btn').forEach(t => {
-      t.classList.remove('selected', 'selected-good');
+    this.opts.forEach((opt, idx) => {
+      const item = document.createElement('div');
+      item.dataset.idx = idx;
+      item.style.cssText =
+        `height:${this.ih}px;display:flex;align-items:center;justify-content:center;` +
+        `scroll-snap-align:center;font-family:'IBM Plex Mono',monospace;user-select:none;`;
+      item.textContent = opt.label;
+      track.appendChild(item);
     });
-    selectedDescriptors = [];
-    if (!btn.classList.contains('selected-good')) {
-      btn.classList.add('selected-good');
-      selectedDescriptors = ['balanced'];
-    }
-    return;
-  }
-  // Remove balanced if selecting a negative
-  const balancedBtn = document.querySelector('#descriptorTags .tag-btn[data-val="balanced"]');
-  if (balancedBtn) balancedBtn.classList.remove('selected-good');
-  selectedDescriptors = selectedDescriptors.filter(d => d !== 'balanced');
 
-  if (btn.classList.contains('selected')) {
-    btn.classList.remove('selected');
-    selectedDescriptors = selectedDescriptors.filter(d => d !== val);
-  } else {
-    btn.classList.add('selected');
-    selectedDescriptors.push(val);
+    // Bottom padding
+    for (let i=0;i<pad;i++) track.appendChild(this._sp());
+
+    this.track = track;
+    this.el.appendChild(track);
+
+    // Set initial scroll after layout
+    requestAnimationFrame(() => {
+      const idx = this.opts.findIndex(o => String(o.value) === String(this._val));
+      if (idx >= 0) this.track.scrollTop = idx * this.ih;
+      this._style();
+    });
+
+    let t;
+    track.addEventListener('scroll', () => {
+      this._style();
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const idx = Math.round(this.track.scrollTop / this.ih);
+        this.track.scrollTo({ top: idx*this.ih, behavior:'smooth' });
+        if (this.opts[idx]) this._val = this.opts[idx].value;
+        this._style();
+      }, 120);
+    }, { passive:true });
+  }
+
+  _sp() {
+    const s = document.createElement('div');
+    s.style.cssText = `height:${this.ih}px;flex-shrink:0;scroll-snap-align:none`;
+    return s;
+  }
+
+  _style() {
+    const sel = Math.round(this.track.scrollTop / this.ih);
+    this.track.querySelectorAll('[data-idx]').forEach(item => {
+      const d = Math.abs(parseInt(item.dataset.idx) - sel);
+      if (d===0) {
+        item.style.color = 'var(--text)';
+        item.style.fontSize = '20px';
+        item.style.fontWeight = '500';
+        item.style.opacity = '1';
+      } else if (d===1) {
+        item.style.color = 'var(--text-mid)';
+        item.style.fontSize = '16px';
+        item.style.fontWeight = '400';
+        item.style.opacity = '.7';
+      } else if (d===2) {
+        item.style.color = 'var(--text-dim)';
+        item.style.fontSize = '13px';
+        item.style.fontWeight = '300';
+        item.style.opacity = '.35';
+      } else {
+        item.style.color = 'var(--text-dim)';
+        item.style.fontSize = '11px';
+        item.style.fontWeight = '300';
+        item.style.opacity = '.12';
+      }
+    });
+  }
+
+  getValue() {
+    const idx = Math.round(this.track.scrollTop / this.ih);
+    return this.opts[idx] ? this.opts[idx].value : this._val;
   }
 }
 
-function setRating(val) {
-  currentRating = val;
-  updateRatingDisplay();
-}
+// ════════════════════════════════════════════
+//  GRIND INPUT
+// ════════════════════════════════════════════
+function bindGrindInput(id) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  const inputs = Array.from(wrap.querySelectorAll('.grind-digit'));
 
-function updateRatingDisplay() {
-  const stars = document.querySelectorAll('#ratingInput .rating-star');
-  stars.forEach((s, i) => {
-    s.textContent = i < currentRating ? '●' : '○';
-    s.style.color = i < currentRating ? 'var(--accent)' : 'var(--text3)';
+  inputs.forEach((inp, i) => {
+    // On focus, select all
+    inp.addEventListener('focus', () => inp.select());
+
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace') {
+        if (inp.value) {
+          inp.value = '';
+        } else if (i > 0) {
+          inputs[i-1].focus();
+          inputs[i-1].value = '';
+        }
+        e.preventDefault();
+      }
+    });
+
+    inp.addEventListener('input', () => {
+      // Allow only single digit
+      const v = inp.value.replace(/[^0-9]/g,'').slice(-1);
+      inp.value = v;
+      if (v && i < inputs.length - 1) {
+        inputs[i+1].focus();
+        inputs[i+1].select();
+      }
+    });
   });
-  const labels = ['','1 — undrinkable','2','3','4','5 — decent','6','7','8 — really good','9','10 — perfect'];
-  document.getElementById('ratingLabel').textContent = currentRating ? labels[currentRating] : '';
 }
 
-function goToBrewStep2() {
-  document.getElementById('brewStep1').style.display = 'none';
-  document.getElementById('brewStep2').style.display = 'block';
-  document.getElementById('step1dot').className = 'step-dot done';
-  document.getElementById('step2dot').className = 'step-dot active';
+function getGrindVal(id) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return '';
+  const digits = Array.from(wrap.querySelectorAll('.grind-digit')).map(i => i.value || '_');
+  return digits.join('.');
 }
 
-function goToBrewStep1() {
-  document.getElementById('brewStep1').style.display = 'block';
-  document.getElementById('brewStep2').style.display = 'none';
-  document.getElementById('step1dot').className = 'step-dot active';
-  document.getElementById('step2dot').className = 'step-dot';
+function grindInputHTML(id, val) {
+  const parts = (val||'').split('.');
+  const d = [parts[0]||'', parts[1]||'', parts[2]||''];
+  return `
+    <div class="grind-wrap" id="${id}">
+      <input class="grind-digit" maxlength="1" type="text" inputmode="numeric" value="${d[0]}">
+      <span class="grind-dot">.</span>
+      <input class="grind-digit" maxlength="1" type="text" inputmode="numeric" value="${d[1]}">
+      <span class="grind-dot">.</span>
+      <input class="grind-digit" maxlength="1" type="text" inputmode="numeric" value="${d[2]}">
+    </div>
+    <div class="grind-hint">type three digits — dots fill in automatically</div>
+  `;
 }
 
-function saveBrew() {
-  const dose = parseFloat(document.getElementById('br_dose').value);
-  const ratio = parseFloat(document.getElementById('br_ratio').value) || 16;
-  const water = Math.round(dose * ratio);
-  const temp = document.getElementById('br_temp').value;
-  const grind = document.getElementById('br_grindSetting').value;
-  const brewer = document.getElementById('br_brewer').value;
+// ════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
 
-  const suggestions = generateSuggestions(selectedDescriptors, brewer, dose, ratio, temp, grind);
+function ago(ts) {
+  if (!ts) return '—';
+  const d = Math.floor((Date.now()-ts)/86400000);
+  if (d===0) return 'today';
+  if (d===1) return 'yesterday';
+  if (d<7)   return d+'d ago';
+  if (d<60)  return Math.floor(d/7)+'w ago';
+  return new Date(ts).toLocaleDateString('en-CA',{month:'short',day:'numeric'});
+}
 
-  const data = loadData();
-  const brew = {
-    id: uid(),
-    coffeeId: document.getElementById('br_coffeeId').value,
-    brewDate: document.getElementById('br_brewDate').value,
-    brewer,
-    dose,
-    ratio,
-    water,
-    temp: parseFloat(temp),
-    grindSetting: grind,
-    bloomWater: parseFloat(document.getElementById('br_bloomWater').value) || null,
-    bloomTime: parseFloat(document.getElementById('br_bloomTime').value) || null,
-    yieldOut: parseFloat(document.getElementById('br_yield').value) || null,
-    recipeNotes: document.getElementById('br_recipeNotes').value.trim(),
-    perceivedRoast: document.getElementById('br_perceivedRoast').value,
-    perceivedNotes: document.getElementById('br_perceivedNotes').value.trim(),
-    descriptors: [...selectedDescriptors],
-    rating: currentRating,
-    suggestions,
-    createdAt: new Date().toISOString()
+function shortDate(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleDateString('en-CA',{month:'short',year:'numeric'});
+}
+
+function calcWater(dose, ratio) {
+  const d = parseFloat(dose), r = parseFloat(ratio);
+  if (!d||!r) return null;
+  return Math.round(d*r);
+}
+
+function getCoffee() { return S.coffees.find(c => c.id===S.selectedId); }
+function lastBrew(c) { return c.brews&&c.brews.length ? c.brews[c.brews.length-1] : null; }
+
+function roastColor(r) {
+  return {'ultra light':'#d4c4b0',light:'#c4aa88',medium:'#c8832a',dark:'#7a4f1a'}[r]||'var(--text-dim)';
+}
+
+function starsHTML(n) {
+  let h='<div class="stars">';
+  for(let i=1;i<=5;i++) h+=`<span class="${i<=n?'star-on':'star-off'}">★</span>`;
+  return h+'</div>';
+}
+
+function pipsHTML(n) {
+  let h='<div class="pips">';
+  for(let i=1;i<=5;i++) h+=`<div class="pip${i<=n?' on':''}"></div>`;
+  return h+'</div>';
+}
+
+function formatRatio(v) {
+  if (!v) return '—';
+  const n = parseFloat(v);
+  return `1:${n%1===0?n+'.0':n}`;
+}
+
+function formatNextTime(nt) {
+  if (!nt) return null;
+  const parts = [];
+  if (nt.ratio) parts.push({ label:'ratio', val: formatRatio(nt.ratio) });
+  if (nt.temp)  parts.push({ label:'temp',  val: nt.temp+'°' });
+  if (nt.grind) parts.push({ label:'grind', val: nt.grind });
+  if (!parts.length) return null;
+  return parts;
+}
+
+// ════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════
+function render() {
+  drums = {};
+  const app = document.getElementById('app');
+  const c = getCoffee();
+  app.innerHTML = (S.view==='detail' && c) ? renderDetail(c) : renderHome();
+  removeModal();
+  (S.view==='detail' && c) ? bindDetail(c) : bindHome();
+  if (S.modal) openModal();
+}
+
+// ── HOME ──────────────────────────────────
+function renderHome() {
+  const active   = S.coffees.filter(c=>c.status==='active');
+  const finished = S.coffees.filter(c=>c.status==='finished');
+  return `
+    <div class="page-header">
+      <div class="logo-eyebrow">coffee · trajectory</div>
+      <div class="logo">Δ<em>V</em><span class="logo-num">-60</span></div>
+    </div>
+    <div class="tabs">
+      <button class="tab ${S.tab==='active'?'on':''}"  data-tab="active">
+        On Hand <span style="opacity:.4">${active.length}</span>
+      </button>
+      <button class="tab ${S.tab==='history'?'on':''}" data-tab="history">
+        Finished <span style="opacity:.4">${finished.length}</span>
+      </button>
+    </div>
+    ${S.tab==='active' ? renderActive(active) : renderHistory(finished)}
+    <button id="add-fab">+</button>
+  `;
+}
+
+function renderActive(list) {
+  if (!list.length) return `
+    <div class="empty">
+      <div class="empty-icon">◎</div>
+      <div class="empty-title">No open bags</div>
+      <div class="empty-sub">Tap + to add your first coffee</div>
+    </div>`;
+  return `<div class="list">${list.map(c => {
+    const lb = lastBrew(c);
+    const s  = c.currentSettings||{};
+    const water = calcWater(s.dose, s.ratio);
+    const nt = lb ? formatNextTime(lb.nextTime) : null;
+    const chips = [
+      s.dose  ? `${s.dose}g`         : null,
+      s.ratio ? formatRatio(s.ratio) : null,
+      s.grind ? `grind ${s.grind}`   : null,
+    ].filter(Boolean);
+
+    return `
+      <div class="card" data-id="${c.id}">
+        <div class="card-top">
+          <div>
+            <div class="card-roaster">${c.roaster||'—'}</div>
+            <div class="card-name">${[c.name,c.origin].filter(Boolean).join(' · ')||'Unnamed'}</div>
+          </div>
+          ${c.roastLevel?`<span class="roast-tag" style="color:${roastColor(c.roastLevel)}">${c.roastLevel}</span>`:''}
+        </div>
+        ${chips.length?`<div class="card-chips">${chips.map(x=>`<span class="chip">${x}</span>`).join('')}</div>`:''}
+        <div class="card-foot">
+          <span class="last-brewed">${lb?'brewed '+ago(lb.date):'not yet brewed'}</span>
+          ${c.rating?starsHTML(c.rating):''}
+        </div>
+        ${nt?`<div class="next-pill" style="margin-top:8px">↗ ${nt.map(p=>p.val).join(' · ')}</div>`:''}
+      </div>`;
+  }).join('')}</div>`;
+}
+
+function renderHistory(list) {
+  if (!list.length) return `
+    <div class="empty">
+      <div class="empty-icon">◇</div>
+      <div class="empty-title">Nothing finished yet</div>
+      <div class="empty-sub">Bags you finish will appear here, sorted by rating</div>
+    </div>`;
+  const sorted = [...list].sort((a,b)=>(b.rating||0)-(a.rating||0));
+  return `<div class="list">${sorted.map(c => {
+    const s = c.currentSettings||{};
+    return `
+      <div class="card finished" data-id="${c.id}">
+        <div class="card-top">
+          <div>
+            <div class="card-roaster">${c.roaster||'—'}</div>
+            <div class="card-name">${[c.name,c.origin].filter(Boolean).join(' · ')||'Unnamed'}</div>
+          </div>
+          ${c.roastLevel?`<span class="roast-tag" style="color:${roastColor(c.roastLevel)}">${c.roastLevel}</span>`:''}
+        </div>
+        <div class="card-foot" style="margin-top:9px">
+          ${c.rating?starsHTML(c.rating):'<span style="color:var(--text-dim);font-size:11px">not rated</span>'}
+          <span class="last-brewed">${shortDate(c.dateFinished)}</span>
+        </div>
+        ${s.grind||s.ratio?`<div class="card-chips" style="margin-top:7px">
+          ${s.ratio?`<span class="chip" style="color:var(--text-dim)">${formatRatio(s.ratio)}</span>`:''}
+          ${s.grind?`<span class="chip" style="color:var(--text-dim)">grind ${s.grind}</span>`:''}
+          ${c.boughtFrom?`<span class="chip" style="color:var(--text-dim)">${c.boughtFrom}</span>`:''}
+        </div>`:''}
+      </div>`;
+  }).join('')}</div>`;
+}
+
+// ── DETAIL ────────────────────────────────
+function renderDetail(c) {
+  const lb = lastBrew(c);
+  const s  = c.currentSettings||{};
+  const nt = lb ? formatNextTime(lb.nextTime) : null;
+  const water = calcWater(s.dose, s.ratio);
+  const isV60 = !c.brewMethod || c.brewMethod==='V60';
+
+  const meta = [
+    c.variety && `<em>${c.variety}</em>`,
+    c.roastLevel && `<span style="color:${roastColor(c.roastLevel)}">${c.roastLevel} roast</span>`,
+    c.roastDate && `roasted ${ago(new Date(c.roastDate).getTime())}`,
+    c.boughtFrom,
+  ].filter(Boolean).join(' &middot; ');
+
+  return `
+    <div class="detail">
+      <div class="detail-header">
+        <button class="back" id="back-btn">←</button>
+        <div style="flex:1;min-width:0">
+          <div class="card-roaster" style="margin-bottom:3px">${c.roaster||'—'}</div>
+          <div class="detail-name">${[c.name,c.origin].filter(Boolean).join(' · ')||'Unnamed'}</div>
+          ${meta?`<div class="detail-sub">${meta}</div>`:''}
+        </div>
+        <button class="det-edit-btn" id="edit-btn">Edit</button>
+      </div>
+
+      ${nt?`
+        <div class="nt-banner">
+          <div class="nt-label">↗ Try next time</div>
+          <div class="nt-values">
+            ${nt.map(p=>`<div class="nt-val">${p.val}<span>${p.label}</span></div>`).join('')}
+          </div>
+        </div>`:
+      ''}
+
+      <div class="section">
+        <div class="sec-label">Dial-in · ${c.brewMethod||'V60'}</div>
+        <div class="settings-row">
+          <div class="setting-block no-tap" style="max-width:80px">
+            <div class="sb-label">Dose</div>
+            <input class="dose-input" id="dose-inp" type="number" inputmode="decimal"
+                   value="${s.dose||''}" placeholder="—">
+            <div class="sb-unit">grams</div>
+          </div>
+          <div class="setting-block" id="tap-ratio">
+            <div class="sb-label">Ratio</div>
+            <div class="sb-val">${s.ratio?formatRatio(s.ratio):'—'}</div>
+          </div>
+          <div class="setting-block" id="tap-temp">
+            <div class="sb-label">Temp</div>
+            <div class="sb-val">${s.temp||'—'}</div>
+            <div class="sb-unit">°C</div>
+          </div>
+          <div class="setting-block" id="tap-grind">
+            <div class="sb-label">Grind</div>
+            <div class="sb-val" style="font-size:${s.grind?'17px':'20px'}">${s.grind||'—'}</div>
+          </div>
+          ${!isV60?`
+          <div class="setting-block" id="tap-time">
+            <div class="sb-label">Time</div>
+            <div class="sb-val" style="font-size:16px">${s.time||'—'}</div>
+          </div>`:''}
+        </div>
+        ${water?`<div class="water-calc">→ <strong>${water}g</strong> water</div>`:''}
+      </div>
+
+      ${c.roasterNotes?`
+        <div class="section">
+          <div class="sec-label">Roaster's notes</div>
+          <div class="rn-text">${c.roasterNotes}</div>
+          ${c.tasteMatchRating?`
+            <div style="margin-top:10px">
+              <div style="font-size:10px;color:var(--text-dim);margin-bottom:3px">how close I got</div>
+              ${pipsHTML(c.tasteMatchRating)}
+            </div>`:''}
+        </div>`:''}
+
+      ${c.comments?`
+        <div class="section">
+          <div class="sec-label">Comments</div>
+          <div class="comment-box">${c.comments}</div>
+        </div>`:''}
+
+      ${c.rating?`
+        <div class="section">
+          <div class="sec-label">Rating</div>
+          ${starsHTML(c.rating)}
+        </div>`:''}
+
+      ${c.status==='active'?`
+        <div class="actions">
+          <button class="btn btn-primary" id="brew-btn">I just brewed this →</button>
+          <button class="btn btn-danger"  id="finish-btn">Finish bag</button>
+        </div>`:
+        `<div class="actions">
+          <button class="btn btn-ghost" id="reopen-btn">Re-open bag</button>
+        </div>`}
+    </div>`;
+}
+
+// ════════════════════════════════════════════
+//  BINDING — HOME
+// ════════════════════════════════════════════
+function bindHome() {
+  document.querySelectorAll('.tab').forEach(t =>
+    t.addEventListener('click',()=>{S.tab=t.dataset.tab;render();}));
+  document.querySelectorAll('.card[data-id]').forEach(card =>
+    card.addEventListener('click',()=>{
+      S.selectedId=card.dataset.id; S.view='detail'; render();
+    }));
+  document.getElementById('add-fab').addEventListener('click',()=>{
+    S.modal='add'; openModal();
+  });
+}
+
+// ════════════════════════════════════════════
+//  BINDING — DETAIL
+// ════════════════════════════════════════════
+function bindDetail(c) {
+  document.getElementById('back-btn').addEventListener('click',()=>{
+    S.view='home'; S.selectedId=null; render();
+  });
+  document.getElementById('edit-btn').addEventListener('click',()=>{
+    S.modal='edit'; openModal();
+  });
+
+  // Dose auto-save
+  const doseInp = document.getElementById('dose-inp');
+  if (doseInp) {
+    let doseTimer;
+    doseInp.addEventListener('input', () => {
+      clearTimeout(doseTimer);
+      doseTimer = setTimeout(()=>updateSetting(c,'dose',doseInp.value.trim()), 600);
+    });
+    doseInp.addEventListener('blur', () => updateSetting(c,'dose',doseInp.value.trim()));
+  }
+
+  // Tap setting blocks → open picker
+  ['ratio','temp','grind'].forEach(key => {
+    const el = document.getElementById(`tap-${key}`);
+    if (el) el.addEventListener('click',()=>{ S.modal='pick-'+key; openModal(); });
+  });
+  const timeTap = document.getElementById('tap-time');
+  if (timeTap) timeTap.addEventListener('click',()=>{ S.modal='pick-time'; openModal(); });
+
+  const brewBtn = document.getElementById('brew-btn');
+  if (brewBtn) brewBtn.addEventListener('click',()=>{ S.modal='post-brew'; openModal(); });
+
+  const finBtn = document.getElementById('finish-btn');
+  if (finBtn) finBtn.addEventListener('click',()=>{ S.modal='finish'; openModal(); });
+
+  const reopenBtn = document.getElementById('reopen-btn');
+  if (reopenBtn) reopenBtn.addEventListener('click',()=>{
+    const idx = S.coffees.findIndex(x=>x.id===c.id);
+    S.coffees[idx].status='active'; S.coffees[idx].dateFinished=null;
+    save(); render();
+  });
+}
+
+function updateSetting(c, key, val) {
+  const idx = S.coffees.findIndex(x=>x.id===c.id);
+  if (idx===-1) return;
+  if (!S.coffees[idx].currentSettings) S.coffees[idx].currentSettings={};
+  S.coffees[idx].currentSettings[key] = val;
+  save();
+  // Re-render water calc without full render
+  const s = S.coffees[idx].currentSettings;
+  const w = calcWater(s.dose, s.ratio);
+  const wc = document.querySelector('.water-calc');
+  if (wc) wc.innerHTML = w ? `→ <strong>${w}g</strong> water` : '';
+}
+
+// ════════════════════════════════════════════
+//  MODALS
+// ════════════════════════════════════════════
+function removeModal() {
+  const el = document.getElementById('modal-overlay');
+  if (el) el.remove();
+}
+
+function openModal() {
+  removeModal();
+  const c = getCoffee();
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'modal-overlay';
+  overlay.innerHTML = buildModalHTML(c);
+  document.body.appendChild(overlay);
+  bindModal(c);
+}
+
+function buildModalHTML(c) {
+  const m = S.modal;
+  if (m==='add'||m==='edit')    return modalCoffeeForm(c);
+  if (m==='post-brew')          return modalPostBrew(c);
+  if (m==='finish')             return modalFinish(c);
+  if (m==='pick-ratio')         return modalPickerSingle('Ratio','ratio-drum', RATIO_OPTS, (c&&c.currentSettings&&c.currentSettings.ratio)||16);
+  if (m==='pick-temp')          return modalPickerSingle('Temperature','temp-drum', TEMP_OPTS, (c&&c.currentSettings&&c.currentSettings.temp)||93);
+  if (m==='pick-grind')         return modalPickGrind(c);
+  if (m==='pick-time')          return modalPickTime(c);
+  return '';
+}
+
+// ── COFFEE FORM ────────────────────────────
+function modalCoffeeForm(c) {
+  const e = (S.modal==='edit' && c) ? c : {};
+  const isEdit = S.modal==='edit';
+  const sorted = [...S.roasters].sort();
+
+  return `<div class="modal">
+    <div class="modal-title">${isEdit?'Edit coffee':'New bag'}</div>
+    <div class="modal-sub">${isEdit?'':'Fields you skip can be added later.'}</div>
+
+    <div class="fg">
+      <label class="fl">Roaster</label>
+      <select class="fs" id="f-roaster" onchange="onRoasterChange()">
+        <option value="" ${!e.roaster?'selected':''}>Select roaster…</option>
+        ${sorted.map(r=>`<option value="${r}" ${r===e.roaster?'selected':''}>${r}</option>`).join('')}
+        <option value="__new__">＋ Add new roaster…</option>
+      </select>
+      <div id="new-roaster-wrap" style="display:none;margin-top:8px">
+        <input class="fi" id="new-roaster-inp" placeholder="Roaster name">
+      </div>
+    </div>
+
+    <div class="fr2">
+      <div class="fg">
+        <label class="fl">Coffee name</label>
+        <input class="fi" id="f-name" value="${e.name||''}" placeholder="e.g. Yirgacheffe Natural">
+      </div>
+      <div class="fg">
+        <label class="fl">Origin</label>
+        <input class="fi" id="f-origin" value="${e.origin||''}" placeholder="e.g. Ethiopia">
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Variety</label>
+      <input class="fi" id="f-variety" value="${e.variety||''}" placeholder="e.g. Heirloom, Gesha, Bourbon…">
+    </div>
+
+    <div class="fr2">
+      <div class="fg">
+        <label class="fl">Roast level</label>
+        <select class="fs" id="f-roast">
+          <option value="" ${!e.roastLevel?'selected':''}>—</option>
+          <option value="ultra light" ${e.roastLevel==='ultra light'?'selected':''}>Ultra Light</option>
+          <option value="light"       ${e.roastLevel==='light'      ?'selected':''}>Light</option>
+          <option value="medium"      ${e.roastLevel==='medium'     ?'selected':''}>Medium</option>
+          <option value="dark"        ${e.roastLevel==='dark'       ?'selected':''}>Dark</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Roast date</label>
+        <input class="fi" id="f-roast-date" type="date" value="${e.roastDate||''}">
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Where bought</label>
+      <input class="fi" id="f-bought" value="${e.boughtFrom||''}" placeholder="e.g. local shop, online">
+    </div>
+
+    <div class="fg">
+      <label class="fl">Roaster's tasting notes</label>
+      <textarea class="ft" id="f-notes" placeholder="Blackcurrant, jasmine, brown sugar…">${e.roasterNotes||''}</textarea>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Comments (optional)</label>
+      <textarea class="ft" id="f-comments" style="min-height:56px" placeholder="Anything notable…">${e.comments||''}</textarea>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Rating</label>
+      ${starInputHTML('f-rating', e.rating||0)}
+    </div>
+
+    ${e.roasterNotes?`
+      <div class="fg">
+        <label class="fl">Taste match — how close did you get?</label>
+        ${pipInputHTML('f-match', e.tasteMatchRating||0)}
+      </div>`:''}
+
+    <div class="m-actions">
+      <button class="btn btn-ghost" id="m-cancel">Cancel</button>
+      <button class="btn btn-primary" id="m-save">${isEdit?'Save changes':'Add to on hand'}</button>
+    </div>
+  </div>`;
+}
+
+// ── POST-BREW MODAL ────────────────────────
+function modalPostBrew(c) {
+  const s = c.currentSettings||{};
+  return `<div class="modal">
+    <div class="modal-title">Next time I'll try…</div>
+    <div class="modal-sub">Scroll to your target settings for next brew. Skip if you're happy.</div>
+
+    <div class="sec-label" style="margin-bottom:0">Ratio · Temp · Grind</div>
+    <div class="pb-drums">
+      <div class="pb-drum-col">
+        <div class="pb-drum-label">Ratio</div>
+        <div id="pb-ratio-drum"></div>
+      </div>
+      <div class="pb-drum-col">
+        <div class="pb-drum-label">Temp</div>
+        <div id="pb-temp-drum"></div>
+      </div>
+      <div class="pb-drum-col" style="border-right:none">
+        <div class="pb-drum-label">Grind</div>
+        <div style="padding:14px 8px">
+          ${grindInputHTML('pb-grind', s.grind||'')}
+        </div>
+      </div>
+    </div>
+
+    <div class="m-actions">
+      <button class="btn btn-ghost" id="m-cancel">Skip</button>
+      <button class="btn btn-primary" id="pb-save">Save →</button>
+    </div>
+  </div>`;
+}
+
+// ── FINISH MODAL ───────────────────────────
+function modalFinish(c) {
+  return `<div class="modal">
+    <div class="modal-title">Finish this bag?</div>
+    <div class="modal-sub">Move it to your history with a final rating.</div>
+
+    <div class="fg">
+      <label class="fl">Overall rating</label>
+      ${starInputHTML('fin-rating', c.rating||0)}
+    </div>
+    ${c.roasterNotes?`
+      <div class="fg">
+        <label class="fl">Taste match</label>
+        ${pipInputHTML('fin-match', c.tasteMatchRating||0)}
+      </div>`:''}
+    <div class="fg">
+      <label class="fl">Final comments</label>
+      <textarea class="ft" id="fin-comments" style="min-height:56px" placeholder="Would buy again? What stood out?">${c.comments||''}</textarea>
+    </div>
+
+    <div class="m-actions">
+      <button class="btn btn-ghost" id="m-cancel">Cancel</button>
+      <button class="btn btn-danger" id="fin-confirm" style="flex:2">Finish bag</button>
+    </div>
+  </div>`;
+}
+
+// ── SINGLE SETTING PICKER ─────────────────
+function modalPickerSingle(title, drumId, opts, val) {
+  return `<div class="modal" style="padding-bottom:30px">
+    <div class="modal-title">${title}</div>
+    <div style="height:10px"></div>
+    <div id="${drumId}"></div>
+    <div class="m-actions" style="margin-top:20px">
+      <button class="btn btn-ghost" id="m-cancel">Cancel</button>
+      <button class="btn btn-primary" id="picker-save">Set →</button>
+    </div>
+  </div>`;
+}
+
+function modalPickGrind(c) {
+  const s = c.currentSettings||{};
+  return `<div class="modal" style="padding-bottom:30px">
+    <div class="modal-title">Grind size</div>
+    <div class="modal-sub">Enter three digits — dots fill in automatically.</div>
+    ${grindInputHTML('grind-picker', s.grind||'')}
+    <div class="m-actions" style="margin-top:20px">
+      <button class="btn btn-ghost" id="m-cancel">Cancel</button>
+      <button class="btn btn-primary" id="grind-save">Set →</button>
+    </div>
+  </div>`;
+}
+
+function modalPickTime(c) {
+  const s = c.currentSettings||{};
+  return `<div class="modal" style="padding-bottom:30px">
+    <div class="modal-title">Brew time</div>
+    <div class="fg" style="margin-top:12px">
+      <label class="fl">Time (mm:ss)</label>
+      <input class="fi" id="time-inp" value="${s.time||''}" placeholder="3:30">
+    </div>
+    <div class="m-actions">
+      <button class="btn btn-ghost" id="m-cancel">Cancel</button>
+      <button class="btn btn-primary" id="time-save">Set →</button>
+    </div>
+  </div>`;
+}
+
+// ── STAR / PIP INPUTS ─────────────────────
+function starInputHTML(id, val) {
+  let h = `<div class="star-inp" id="${id}" data-value="${val}">`;
+  for (let i=1;i<=5;i++)
+    h += `<button class="star-btn${i<=val?' on':''}" data-v="${i}" type="button">★</button>`;
+  return h+'</div>';
+}
+
+function pipInputHTML(id, val) {
+  let h = `<div class="star-inp" id="${id}" data-value="${val}">`;
+  for (let i=1;i<=5;i++)
+    h += `<button class="pip-btn" data-v="${i}" type="button">
+            <div class="pip${i<=val?' on':''}"></div>
+          </button>`;
+  return h+'</div>';
+}
+
+function bindRatingInputs() {
+  document.querySelectorAll('.star-inp').forEach(container => {
+    container.querySelectorAll('[data-v]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = parseInt(btn.dataset.v);
+        container.dataset.value = v;
+        // Stars
+        container.querySelectorAll('.star-btn').forEach((b,i) => b.classList.toggle('on', i<v));
+        // Pips
+        container.querySelectorAll('.pip').forEach((p,i) => p.classList.toggle('on', i<v));
+      });
+    });
+  });
+}
+
+function getInputVal(id) {
+  const el = document.getElementById(id);
+  return el ? (parseInt(el.dataset.value)||0) : 0;
+}
+
+// ════════════════════════════════════════════
+//  BIND MODAL EVENTS
+// ════════════════════════════════════════════
+function bindModal(c) {
+  const overlay = document.getElementById('modal-overlay');
+  if (!overlay) return;
+
+  overlay.addEventListener('click', e => { if (e.target===overlay) closeModal(); });
+
+  const cancelBtn = document.getElementById('m-cancel');
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+  bindRatingInputs();
+  bindGrindInput('pb-grind');
+  bindGrindInput('grind-picker');
+
+  // Handle roaster change (globally accessible for onchange)
+  window.onRoasterChange = () => {
+    const sel = document.getElementById('f-roaster');
+    const wrap = document.getElementById('new-roaster-wrap');
+    if (!sel||!wrap) return;
+    wrap.style.display = sel.value==='__new__' ? 'block' : 'none';
+    if (sel.value==='__new__') document.getElementById('new-roaster-inp').focus();
   };
 
-  if (!brew.coffeeId) { alert('Please select a coffee.'); goToBrewStep1(); return; }
+  // Init drums
+  const m = S.modal;
 
-  data.brews.push(brew);
-  saveData(data);
-  closeModal('addBrewModal');
-
-  // Show suggestions
-  if (suggestions.length) {
-    const brewer_label = brew.brewer ? ` for your ${brew.brewer}` : '';
-    document.getElementById('suggestionsContent').innerHTML = `
-      <div style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.6">
-        Based on your tasting notes${brewer_label}, here's what to try next time:
-      </div>
-      <div class="suggestion-box">
-        <div class="suggestion-title">💡 Recipe Adjustments</div>
-        ${suggestions.map(s => `<div class="suggestion-item">${s}</div>`).join('')}
-      </div>
-    `;
-    openModal('suggestionsModal');
+  if (m==='post-brew') {
+    const s = c ? (c.currentSettings||{}) : {};
+    requestAnimationFrame(()=>{
+      const pbR = document.getElementById('pb-ratio-drum');
+      const pbT = document.getElementById('pb-temp-drum');
+      if (pbR) drums.pbRatio = new Drum(pbR, RATIO_OPTS, s.ratio||16);
+      if (pbT) drums.pbTemp  = new Drum(pbT, TEMP_OPTS,  s.temp||93);
+    });
   }
 
-  // Refresh current view
-  if (currentView === 'coffee-detail' && currentCoffeeId === brew.coffeeId) {
-    openCoffeeDetail(brew.coffeeId);
-  } else {
-    renderAll();
+  if (m==='pick-ratio') {
+    requestAnimationFrame(()=>{
+      const el = document.getElementById('ratio-drum');
+      if (el) drums.single = new Drum(el, RATIO_OPTS, (c&&c.currentSettings&&c.currentSettings.ratio)||16);
+    });
+  }
+
+  if (m==='pick-temp') {
+    requestAnimationFrame(()=>{
+      const el = document.getElementById('temp-drum');
+      if (el) drums.single = new Drum(el, TEMP_OPTS, (c&&c.currentSettings&&c.currentSettings.temp)||93);
+    });
+  }
+
+  // ── SAVE COFFEE FORM ──────────────────────
+  const mSave = document.getElementById('m-save');
+  if (mSave) {
+    mSave.addEventListener('click', () => {
+      const roasterSel = document.getElementById('f-roaster').value;
+      let roasterName = roasterSel;
+      if (roasterSel==='__new__') {
+        roasterName = (document.getElementById('new-roaster-inp').value||'').trim();
+        if (roasterName && !S.roasters.includes(roasterName)) {
+          S.roasters.push(roasterName);
+        }
+      }
+
+      const data = {
+        roaster:          roasterName||'',
+        name:             document.getElementById('f-name').value.trim(),
+        origin:           document.getElementById('f-origin').value.trim(),
+        variety:          document.getElementById('f-variety').value.trim(),
+        roastLevel:       document.getElementById('f-roast').value,
+        roastDate:        document.getElementById('f-roast-date').value,
+        boughtFrom:       document.getElementById('f-bought').value.trim(),
+        roasterNotes:     document.getElementById('f-notes').value.trim(),
+        comments:         document.getElementById('f-comments').value.trim(),
+        rating:           getInputVal('f-rating'),
+        tasteMatchRating: getInputVal('f-match'),
+      };
+
+      if (S.modal==='add') {
+        const nc = { id:uid(), ...data, status:'active', dateAdded:Date.now(), brews:[], currentSettings:{} };
+        S.coffees.push(nc);
+        save();
+        S.modal = null;
+        S.selectedId = nc.id;
+        S.view = 'detail';
+      } else {
+        const idx = S.coffees.findIndex(x=>x.id===c.id);
+        S.coffees[idx] = { ...S.coffees[idx], ...data };
+        save();
+        S.modal = null;
+      }
+      render();
+    });
+  }
+
+  // ── SAVE POST-BREW ────────────────────────
+  const pbSave = document.getElementById('pb-save');
+  if (pbSave) {
+    pbSave.addEventListener('click', () => {
+      const idx = S.coffees.findIndex(x=>x.id===c.id);
+      if (idx===-1) return closeModal();
+      const nt = {
+        ratio: drums.pbRatio ? drums.pbRatio.getValue() : null,
+        temp:  drums.pbTemp  ? drums.pbTemp.getValue()  : null,
+        grind: getGrindVal('pb-grind').replace(/_/g,''),
+      };
+      // Clean up empty grind
+      if (nt.grind.replace(/\./g,'').trim()==='') nt.grind = null;
+
+      if (!S.coffees[idx].brews) S.coffees[idx].brews=[];
+      S.coffees[idx].brews.push({ date:Date.now(), nextTime: nt });
+      save();
+      S.modal = null;
+      render();
+    });
+  }
+
+  // ── PICKER SAVE ───────────────────────────
+  const pSave = document.getElementById('picker-save');
+  if (pSave) {
+    pSave.addEventListener('click', () => {
+      const idx = S.coffees.findIndex(x=>x.id===c.id);
+      if (idx===-1) return closeModal();
+      if (!S.coffees[idx].currentSettings) S.coffees[idx].currentSettings={};
+
+      if (S.modal==='pick-ratio' && drums.single) {
+        S.coffees[idx].currentSettings.ratio = drums.single.getValue();
+      }
+      if (S.modal==='pick-temp' && drums.single) {
+        S.coffees[idx].currentSettings.temp = drums.single.getValue();
+      }
+      save();
+      S.modal = null;
+      render();
+    });
+  }
+
+  // ── GRIND SAVE ────────────────────────────
+  const gSave = document.getElementById('grind-save');
+  if (gSave) {
+    gSave.addEventListener('click', () => {
+      const idx = S.coffees.findIndex(x=>x.id===c.id);
+      if (idx===-1) return closeModal();
+      if (!S.coffees[idx].currentSettings) S.coffees[idx].currentSettings={};
+      const val = getGrindVal('grind-picker');
+      S.coffees[idx].currentSettings.grind = val.includes('_') ? val : val;
+      save();
+      S.modal = null;
+      render();
+    });
+  }
+
+  // ── TIME SAVE ─────────────────────────────
+  const tSave = document.getElementById('time-save');
+  if (tSave) {
+    tSave.addEventListener('click', () => {
+      const idx = S.coffees.findIndex(x=>x.id===c.id);
+      if (idx===-1) return closeModal();
+      if (!S.coffees[idx].currentSettings) S.coffees[idx].currentSettings={};
+      S.coffees[idx].currentSettings.time = document.getElementById('time-inp').value.trim();
+      save();
+      S.modal = null;
+      render();
+    });
+  }
+
+  // ── FINISH CONFIRM ────────────────────────
+  const finConfirm = document.getElementById('fin-confirm');
+  if (finConfirm) {
+    finConfirm.addEventListener('click', () => {
+      const idx = S.coffees.findIndex(x=>x.id===c.id);
+      if (idx===-1) return closeModal();
+      S.coffees[idx].status       = 'finished';
+      S.coffees[idx].dateFinished = Date.now();
+      const r = getInputVal('fin-rating');
+      const m = getInputVal('fin-match');
+      if (r) S.coffees[idx].rating = r;
+      if (m) S.coffees[idx].tasteMatchRating = m;
+      const fc = document.getElementById('fin-comments');
+      if (fc) S.coffees[idx].comments = fc.value.trim();
+      save();
+      S.modal = null;
+      S.view  = 'home';
+      S.tab   = 'history';
+      render();
+    });
   }
 }
 
-// ══════════════════════════════════════════
-// DELETE BREW
-// ══════════════════════════════════════════
-
-function deleteBrew(brewId) {
-  if (!confirm('Delete this brew?')) return;
-  const data = loadData();
-  const brew = data.brews.find(b => b.id === brewId);
-  const coffeeId = brew ? brew.coffeeId : null;
-  data.brews = data.brews.filter(b => b.id !== brewId);
-  saveData(data);
-  // Go back
-  if (coffeeId) {
-    viewHistory = [];
-    openCoffeeDetail(coffeeId);
-  } else {
-    switchView('coffees');
-  }
+function closeModal() {
+  S.modal = null;
+  removeModal();
 }
 
-// ══════════════════════════════════════════
-// EXPORT CSV
-// ══════════════════════════════════════════
-
-function exportCSV() {
-  const { coffees, brews } = loadData();
-  const headers = ['Brew Date','Coffee','Roaster','Origin','Process','Roast Level','Roast Date','Brewer','Dose (g)','Ratio','Water (g)','Temp (C)','Grind Setting','Bloom Water (g)','Bloom Time (s)','Yield Out (g)','Recipe Notes','Perceived Roast','Perceived Notes','Descriptors','Rating /10','Advertised Notes','Suggestions'];
-  const rows = brews.map(b => {
-    const c = coffees.find(x => x.id === b.coffeeId) || {};
-    return [
-      b.brewDate, c.name, c.roaster, c.origin, c.process, c.roastLevel, c.roastDate,
-      b.brewer, b.dose, b.ratio ? '1:'+b.ratio : '', b.water, b.temp, b.grindSetting,
-      b.bloomWater, b.bloomTime, b.yieldOut, b.recipeNotes,
-      b.perceivedRoast, b.perceivedNotes,
-      (b.descriptors || []).join('; '), b.rating,
-      c.advertisedNotes,
-      (b.suggestions || []).join('; ')
-    ].map(v => '"' + (v == null ? '' : String(v).replace(/"/g, '""')) + '"');
-  });
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'brew-log-' + new Date().toISOString().split('T')[0] + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ══════════════════════════════════════════
-// MODAL HELPERS
-// ══════════════════════════════════════════
-
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-// Close on overlay tap
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) closeModal(overlay.id);
-  });
-});
-
-// ══════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════
-
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-// ══════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════
-
-calcWater();
-renderAll();
+// ════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════
+render();
 </script>
 </body>
 </html>
