@@ -238,19 +238,21 @@ const STORE = 'dial_v2';
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(STORE));
-    return d || { coffees: [], roasters: [] };
+    return d || { coffees: [], roasters: [], origins: [] };
   } catch(e) { return { coffees: [], roasters: [] }; }
 }
 
 function save() {
   localStorage.setItem(STORE, JSON.stringify({
     coffees: S.coffees,
-    roasters: S.roasters
+    roasters: S.roasters,
+    origins: S.origins
   }));
 }
 
 const S = { ...load(), view:'home', tab:'active', selectedId:null, modal:null };
 if (!S.roasters) S.roasters = [];
+  if (!S.origins) S.origins = [];
 
 // ════════════════════════════════════════════
 //  CONSTANTS
@@ -831,7 +833,14 @@ function modalCoffeeForm(c) {
       </div>
       <div class="fg">
         <label class="fl">Origin</label>
-        <input class="fi" id="f-origin" value="${e.origin||''}" placeholder="e.g. Ethiopia">
+        <select class="fs" id="f-origin" onchange="onOriginChange()">
+          <option value="" ${!e.origin?'selected':''}>Select origin…</option>
+          ${[...S.origins].sort().map(o=>`<option value="${o}" ${o===e.origin?'selected':''}>${o}</option>`).join('')}
+          <option value="__new__">＋ Add new origin…</option>
+        </select>
+        <div id="new-origin-wrap" style="display:none;margin-top:8px">
+          <input class="fi" id="new-origin-inp" placeholder="Origin name">
+        </div>
       </div>
     </div>
 
@@ -1051,6 +1060,13 @@ function bindModal(c) {
     wrap.style.display = sel.value==='__new__' ? 'block' : 'none';
     if (sel.value==='__new__') document.getElementById('new-roaster-inp').focus();
   };
+  window.onOriginChange = () => {
+    const sel = document.getElementById('f-origin');
+    const wrap = document.getElementById('new-origin-wrap');
+    if (!sel||!wrap) return;
+    wrap.style.display = sel.value==='__new__' ? 'block' : 'none';
+    if (sel.value==='__new__') document.getElementById('new-origin-inp').focus();
+  };
 
   // Init drums
   const m = S.modal;
@@ -1095,7 +1111,15 @@ function bindModal(c) {
       const data = {
         roaster:          roasterName||'',
         name:             document.getElementById('f-name').value.trim(),
-        origin:           document.getElementById('f-origin').value.trim(),
+        origin: (() => {
+            const originSel = document.getElementById('f-origin');
+            if (originSel.value === '__new__') {
+              const newOrigin = (document.getElementById('new-origin-inp').value||'').trim();
+              if (newOrigin && !S.origins.includes(newOrigin)) S.origins.push(newOrigin);
+              return newOrigin;
+            }
+            return originSel.value;
+          })(),
         variety:          document.getElementById('f-variety').value.trim(),
         roastLevel:       document.getElementById('f-roast').value,
         roastDate:        document.getElementById('f-roast-date').value,
